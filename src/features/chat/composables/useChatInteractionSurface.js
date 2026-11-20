@@ -1,4 +1,4 @@
-import { unref } from 'vue'
+import { reactive, unref } from 'vue'
 import { useContextMenu } from './useContextMenu'
 import { useChatContextActions } from './useChatContextActions'
 import { useChatMultiSelect } from './useChatMultiSelect'
@@ -29,8 +29,12 @@ export function useChatInteractionSurface(options = {}) {
     contextMenuBlockKey,
     contextMenuMsgId,
     contextMenuPartIndex,
+    contextMenuPartKey,
     contextMenuIsUser,
     contextMenuContent,
+    contextMenuCanReact,
+    reactionBarX,
+    reactionBarY,
     focusedBubble,
     showContextMenu: showContextMenuBase,
     hideContextMenu
@@ -78,8 +82,10 @@ export function useChatInteractionSurface(options = {}) {
     openCallHistoryFromBubble,
     handleEnterMultiSelect,
     contextMenuFavorited,
+    contextMenuReaction,
     handleFavorite,
-    handleFavoriteSelectedBlocks
+    handleFavoriteSelectedBlocks,
+    handleReact
   } = useChatContextActions({
     store,
     multiSelectMode,
@@ -87,7 +93,9 @@ export function useChatInteractionSurface(options = {}) {
     contextMenuBlockKey,
     contextMenuMsgId,
     contextMenuPartIndex,
+    contextMenuPartKey,
     hideContextMenu,
+    scheduleSave,
     showCallHistoryModal,
     enterMultiSelect,
     toggleFavorite,
@@ -107,6 +115,8 @@ export function useChatInteractionSurface(options = {}) {
     contextMenuPartIndex,
     contextMenuIsUser,
     contextMenuContent,
+    // 长按时上方的表情回应面板
+    reactionMenu: reactive({ canReact: contextMenuCanReact, x: reactionBarX, y: reactionBarY, current: contextMenuReaction }),
     focusedBubble,
     hideContextMenu,
     multiSelectMode,
@@ -128,6 +138,7 @@ export function useChatInteractionSurface(options = {}) {
     handleEnterMultiSelect,
     contextMenuFavorited,
     handleFavorite,
-    handleFavoriteSelectedBlocks
+    handleFavoriteSelectedBlocks,
+    handleReact
   }
 }

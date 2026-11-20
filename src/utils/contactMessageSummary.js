@@ -37,6 +37,7 @@ function normalizeTextPreview(text) {
       .replace(/\(call:[^)]+\)/gi, '[通话]')
       .replace(/\(gift:[^)]+\)/gi, '[礼物]')
       .replace(/\(transfer:[^)]+\)/gi, '[转账]')
+      .replace(/\((?:recall|unsend|撤回)[:：][^)]+\)/gi, '[撤回了一条消息]')
       .replace(/\*([^*]+)\*/g, '$1')
   )
 }
@@ -63,6 +64,7 @@ function getLastPreviewablePart(rawContent) {
 export function buildMessagePreview(message) {
   if (!message || typeof message !== 'object') return ''
   if (message.isMockImage) return '[相机]'
+  if (message.isFile) return `[文件] ${message.fileName || ''}`.trim()
   if (message.isImage || message.imageUrl) return '[图片]'
   if (message.isSticker) {
     const name = normalizePreviewText(message.stickerName)
@@ -87,6 +89,8 @@ export function buildMessagePreview(message) {
   if (part.type === 'transfer') return '[转账]'
   if (part.type === 'music') return '[音乐]'
   if (part.type === 'mockImage') return '[相机]'
+  if (part.type === 'recall') return '[撤回了一条消息]'
+  if (part.type === 'file') return `[文件] ${part.name || ''}`.trim()
   if (part.type === 'ui') {
     const title = normalizePreviewText(getSmartUITitle(part.content))
     return title ? `[卡片] ${title}` : '[卡片]'

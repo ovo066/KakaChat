@@ -4,13 +4,19 @@
       <StatusBar
         v-if="effectiveShowPhoneStatusBar"
         :textColor="lockScreenVisible ? 'white' : statusBarColor"
+        :show-island="showDynamicIsland && lockScreenVisible"
         :style="lockScreenVisible ? { zIndex: 200 } : {}"
       />
-      <DynamicIsland v-if="effectiveShowPhoneStatusBar && !lockScreenVisible" />
+      <DynamicIsland v-if="effectiveShowPhoneStatusBar && !lockScreenVisible" :resident="showDynamicIsland" />
       <div class="flex-1 relative w-full h-full bg-[var(--bg-color)] overflow-hidden">
         <slot></slot>
       </div>
-      <HomeIndicator v-show="!lockScreenVisible && showHomeIndicator" :variant="homeIndicatorVariant" @click="emit('goHome')" />
+      <HomeIndicator
+        v-show="!lockScreenVisible && showHomeIndicator"
+        :variant="homeIndicatorVariant"
+        :ink="route.path === '/' && statusBarColor === 'dark'"
+        @click="emit('goHome')"
+      />
       <LockScreen v-if="showLockScreen" @unlocked="onUnlocked" />
     </div>
   </div>
@@ -91,6 +97,7 @@ const showLockScreen = ref(!hasRecentUnlockGrace())
 const lockScreenVisible = computed(() => showLockScreen.value)
 const showHomeIndicator = computed(() => String(route.name || '') !== 'offline')
 const showPhoneStatusBar = computed(() => store.theme?.showPhoneStatusBar !== false)
+const showDynamicIsland = computed(() => store.theme?.showDynamicIsland === true)
 const displayMode = ref('browser')
 const domFullscreen = ref(false)
 

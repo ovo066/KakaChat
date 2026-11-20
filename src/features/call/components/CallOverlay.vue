@@ -12,6 +12,7 @@
           :call-mode="callMode"
           :is-incoming="callPhase === 'incoming'"
           :invite-text="aiText"
+          :bg-url="voiceBgUrl"
           @cancel="handleEndCall"
           @accept="handleAcceptCall"
         />
@@ -22,12 +23,18 @@
           class="absolute inset-0 flex items-center justify-center z-30"
         >
           <div class="absolute inset-0">
-            <img
-              v-if="contact?.avatarType === 'image'"
-              :src="contact?.avatar"
-              class="w-full h-full object-cover scale-110 opacity-30"
-            >
-            <div class="absolute inset-0 backdrop-blur-[60px] bg-[#0a0a0a]/70"></div>
+            <template v-if="voiceBgUrl">
+              <img :src="voiceBgUrl" class="w-full h-full object-cover" draggable="false">
+              <div class="absolute inset-0 bg-black/45"></div>
+            </template>
+            <template v-else>
+              <img
+                v-if="contact?.avatarType === 'image'"
+                :src="contact?.avatar"
+                class="w-full h-full object-cover scale-110 opacity-30"
+              >
+              <div class="absolute inset-0 backdrop-blur-[60px] bg-[#0a0a0a]/70"></div>
+            </template>
           </div>
           <div class="flex flex-col items-center gap-4 relative z-10">
             <div class="w-16 h-16 rounded-full overflow-hidden ring-[1.5px] ring-white/12 shadow-2xl">
@@ -55,6 +62,7 @@
             :sprite-url="currentSpriteUrl"
             :bg-url="currentBgUrl"
             :character-image="currentCharacterImage"
+            :voice-bg-url="voiceBgUrl"
             :emotion="aiEmotion"
             :ai-speaking="aiSpeaking"
             :duration="durationText"
@@ -123,6 +131,7 @@
         <CallResourcePanel
           :visible="showResourcePanel"
           :contact-id="contact?.id || ''"
+          :call-mode="callMode || 'voice'"
           @close="showResourcePanel = false"
         />
       </div>
@@ -161,6 +170,7 @@ const {
   currentSpriteUrl,
   currentBgUrl,
   currentCharacterImage,
+  currentVoiceBgUrl,
   sttListening,
   interimText,
   muted,
@@ -186,6 +196,9 @@ const {
   startCall,
   receiveCall
 } = useCallOverlayRuntime({ contact })
+
+// 自定义背景只用于语音通话，视频通话有自己的画面
+const voiceBgUrl = computed(() => (callMode.value === 'voice' ? currentVoiceBgUrl.value : ''))
 
 defineExpose({ startCall, receiveCall })
 </script>

@@ -301,25 +301,25 @@ function openInChat() {
 }
 
 /* ========== Dark Mode ========== */
-:global(.dark) .letter-paper {
+.dark .letter-paper {
   background-color: #1e2033;
   border-color: rgba(200, 170, 100, 0.15);
   background-image: linear-gradient(rgba(200, 180, 120, 0.04) 1px, transparent 1px);
   animation-name: letterBreatheDark;
 }
-:global(.dark) .letter-ornament {
+.dark .letter-ornament {
   color: rgba(200, 170, 100, 0.15);
 }
-:global(.dark) .letter-text {
+.dark .letter-text {
   color: #d8d0c4;
 }
-:global(.dark) .letter-image-frame {
+.dark .letter-image-frame {
   border-color: rgba(200, 180, 120, 0.15);
 }
-:global(.dark) .letter-divider {
+.dark .letter-divider {
   background: linear-gradient(90deg, transparent, rgba(200, 180, 120, 0.2), transparent);
 }
-:global(.dark) .letter-footer {
+.dark .letter-footer {
   color: #9a8f7e;
 }
 

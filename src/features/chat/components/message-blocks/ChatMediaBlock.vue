@@ -14,7 +14,7 @@
         :class="block.animClass"
         @contextmenu.prevent="emit('context-menu', $event, block)"
       >
-        <img :src="block.imageUrl" class="max-w-full max-h-[300px] object-contain rounded-2xl">
+        <img :src="block.imageUrl" class="chat-image-single max-w-full max-h-[300px] object-contain rounded-2xl cursor-zoom-in" @click.stop="openImageViewer">
       </div>
 
       <div
@@ -60,12 +60,17 @@
 
       <template v-else>
         <template v-if="block.stickerUrl && !stickerImgFailed">
-          <div class="max-w-[120px]" :class="block.animClass" @contextmenu.prevent="emit('context-menu', $event, block)">
+          <div
+            class="max-w-[120px]"
+            :class="[block.animClass, { 'chat-sticker-loading': !stickerLoaded }]"
+            @contextmenu.prevent="emit('context-menu', $event, block)"
+          >
             <img
               :src="stickerSrc"
-              class="max-w-full max-h-[120px] object-contain"
+              class="chat-sticker-img max-w-full max-h-[120px] object-contain"
               loading="eager"
               decoding="async"
+              @load="stickerLoaded = true"
               @error="handleStickerImgError"
             >
           </div>
@@ -81,11 +86,13 @@
       </template>
     </template>
   </ChatMessageShell>
+  <ChatImageViewer v-if="viewerImages.length > 0" :images="viewerImages" @close="viewerImages = []" />
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import ChatMessageShell from './ChatMessageShell.vue'
+import ChatImageViewer from '../ChatImageViewer.vue'
 
 const props = defineProps({
   block: { type: Object, required: true },
@@ -102,6 +109,7 @@ const STICKER_MAX_AUTO_RETRY = 3
 const STICKER_RETRY_DELAYS_MS = [800, 1800, 3600]
 
 const stickerImgFailed = ref(false)
+const stickerLoaded = ref(false)
 const stickerRetrySeq = ref(0)
 const stickerRetryCount = ref(0)
 const mockImageFlipped = ref(false)
@@ -110,12 +118,14 @@ let stickerRetryTimer = null
 const stickerSrc = computed(() => {
   const raw = String(props.block?.stickerUrl || '').trim()
   if (!raw) return ''
-  if (/^(?:data|blob):/i.test(raw)) return raw
+  // 首次加载用原始地址，和贴纸面板/预热共用浏览器缓存；只有重试时才加参数绕开失败的缓存
+  if (stickerRetrySeq.value === 0 || /^(?:data|blob):/i.test(raw)) return raw
   const joiner = raw.includes('?') ? '&' : '?'
   return `${raw}${joiner}_retry=${stickerRetrySeq.value}`
 })
 
-watch(() => [props.block?.key, props.block?.stickerUrl], () => {
+// 消息更新会重建 block；逐项比较，避免同一张图片的加载状态和重试被重置。
+watch([() => props.block?.key, () => props.block?.stickerUrl], () => {
   resetStickerImageState()
 })
 
@@ -132,6 +142,7 @@ function clearStickerRetryTimer() {
 function resetStickerImageState() {
   clearStickerRetryTimer()
   stickerImgFailed.value = false
+  stickerLoaded.value = false
   stickerRetrySeq.value = 0
   stickerRetryCount.value = 0
 }
@@ -164,6 +175,16 @@ function handleNetworkOnline() {
 function toggleMockImageFlip() {
   if (props.multiSelectMode) return
   mockImageFlipped.value = !mockImageFlipped.value
+}
+
+const viewerImages = ref([])
+
+function openImageViewer() {
+  if (props.multiSelectMode) {
+    emit('toggle-select', props.block.key)
+    return
+  }
+  viewerImages.value = props.block.imageUrl ? [props.block.imageUrl] : []
 }
 
 function handleRootClick() {

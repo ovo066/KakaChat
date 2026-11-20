@@ -99,4 +99,18 @@ describe('message content parts', () => {
       }
     ])
   })
+
+  it('parses recall tokens and round-trips them', () => {
+    const parts = parseMessageContent('其实我…\n(撤回:我好像有点喜欢你(认真的))\n没什么')
+
+    expect(parts).toEqual([
+      { type: 'normal', content: '其实我…', emotion: 'normal' },
+      { type: 'recall', content: '我好像有点喜欢你(认真的)' },
+      { type: 'normal', content: '没什么', emotion: 'normal' }
+    ])
+    expect(rebuildMessageContent(parts)).toBe('其实我…\n(recall:我好像有点喜欢你(认真的))\n没什么')
+    expect(parseMessageContent('(recall:算了)', { allowRecall: false })).toEqual([
+      { type: 'normal', content: '(recall:算了)', emotion: 'normal' }
+    ])
+  })
 })

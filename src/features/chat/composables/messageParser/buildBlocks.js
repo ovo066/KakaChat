@@ -2,6 +2,7 @@ import { resolveMockImagePlaceholder } from '../mockImage'
 import { extractQuoteFromText } from '../../../../utils/messageQuote'
 import { favoritePartIndexToKey, isMessagePartFavorited } from '../../../../utils/messageFavorites'
 import { resolveMessageImageUrl } from '../../../../utils/mediaUrl'
+import { normalizeSearchText } from '../../../../utils/searchText'
 import {
   formatGiftToken,
   formatMeetToken,
@@ -14,10 +15,14 @@ import {
 import { formatTailMetaText, formatTimestampDisplay, isSameDay, normalizeReplyPreviewText } from './display'
 import { getCachedParsedParts, isMessageEndingWithCallPart } from './parseCache'
 import { getInteractionState } from '../interactiveMessages'
+import { getPartReactionsForDisplay } from '../messageReactions'
+import { getEmojiAnimationKind, getJumboEmojiGlyphs } from '../../../../utils/emoji'
 
 const TOOL_LOG_TEXT_MAX_CHARS = 320
 const REASONING_SUMMARY_MAX_CHARS = 72
 const SMART_UI_STREAMING_WINDOW_MS = 5 * 60 * 1000
+// 同一个人两条消息间隔超过这个时长就另起一段（重新出现尾巴/头像/时间）
+const RUN_BREAK_GAP_MS = 3 * 60 * 1000
 
 function truncateToolLogText(value, maxChars = TOOL_LOG_TEXT_MAX_CHARS) {
   const text = String(value || '').trim()
@@ -142,6 +147,8 @@ export function buildMessageBlocks(options) {
     allowAIMockImage,
     allowAIMusicRecommend,
     allowAIMeet,
+    allowAIRecall,
+    allowAIFile,
     showToolLog,
     showReasoning,
     timestampGapMs,
@@ -153,7 +160,8 @@ export function buildMessageBlocks(options) {
     getUserAvatar,
     showNarrations,
     getMockImagePlaceholder,
-    getActiveContactId
+    getActiveContactId,
+    getContactName
   } = options
 
   const allMsgs = getMessages() || []
@@ -165,9 +173,9 @@ export function buildMessageBlocks(options) {
     for (const m of allMsgs) {
       if (!m) continue
       if (m.displayContent != null) {
-        idMap.set(m.id, { ...m, content: m.displayContent })
+        idMap.set(String(m.id), { ...m, content: m.displayContent })
       } else {
-        idMap.set(m.id, m)
+        idMap.set(String(m.id), m)
       }
     }
 
@@ -197,15 +205,65 @@ export function buildMessageBlocks(options) {
     const aiMockImageEnabled = allowAIMockImage ? allowAIMockImage() : true
     const aiMusicEnabled = allowAIMusicRecommend ? allowAIMusicRecommend() : false
     const aiMeetEnabled = allowAIMeet ? allowAIMeet() : false
+    const aiRecallEnabled = allowAIRecall ? allowAIRecall() : true
+    const aiFileEnabled = allowAIFile ? allowAIFile() : false
+    const contactName = getContactName ? String(getContactName() || '').trim() : ''
     const toolLogEnabled = showToolLog ? showToolLog() : false
     const reasoningEnabled = showReasoning ? showReasoning() : false
     const shouldShowNarrations = showNarrations ? showNarrations() : true
-    const createFavoriteState = (message, partIndex = null) => ({
-      favorited: isMessagePartFavorited(message, partIndex),
-      msgPartKey: favoritePartIndexToKey(partIndex)
-    })
+    const createFavoriteState = (message, partIndex = null) => {
+      const msgPartKey = favoritePartIndexToKey(partIndex)
+      return {
+        favorited: isMessagePartFavorited(message, partIndex),
+        msgPartKey,
+        reactions: getPartReactionsForDisplay(message, msgPartKey)
+      }
+    }
+    // 引用的原消息是谁发的：iMessage 里引用自己消息时，缩略气泡的文字用自己的气泡色
+    const findQuotedMessage = (quote, beforeIndex) => {
+      const target = String(quote || '').trim()
+      if (!target) return null
+      for (let idx = beforeIndex - 1; idx >= 0; idx -= 1) {
+        const candidate = msgs[idx]
+        const text = candidate?.displayContent != null ? candidate.displayContent : candidate?.content
+        if (typeof text === 'string' && text.includes(target)) return candidate
+      }
+      return null
+    }
 
     const result = []
+    const findQuotedPartKey = (message, quote) => {
+      const target = normalizeSearchText(extractQuoteFromText(String(quote ?? '')).cleanText)
+      if (!target) return ''
+      const msgId = String(message.sourceMsgId ?? message.id ?? '')
+      const candidates = result
+        .filter(block => block.msgId === msgId && block.msgPartKey)
+        .map(block => ({
+          partKey: block.msgPartKey,
+          text: normalizeSearchText(extractQuoteFromText(String(block.contextContent ?? block.text ?? '')).cleanText)
+        }))
+      // 先匹配完整气泡，再匹配引用片段；不能用截断后的预览文字定位。
+      return (candidates.find(block => block.text === target)
+        || candidates.find(block => block.text.includes(target)))?.partKey || ''
+    }
+
+    // iMessage 式分段：同一发送者的连续消息才算一段；隔了很久、或上一条已被读过（已读不回）
+    // 都另起一段，上一段的最后一个气泡保留小尾巴和已读/时间标记
+    const continuesRun = (a, b) => {
+      if (a.role !== b.role) return false
+      if (groupChat && a.senderId !== b.senderId) return false
+      const aTime = Number(a.time || 0)
+      const bTime = Number(b.time || 0)
+      if (aTime > 0 && bTime > 0) {
+        const gap = bTime - aTime
+        if (gap >= RUN_BREAK_GAP_MS || !isSameDay(aTime, bTime)) return false
+        if (timestampEnabled && gap >= timestampGapMs) return false
+        const readAt = Number(a.readAt || 0)
+        if (a.role === 'user' && readAt > 0 && readAt <= bTime) return false
+      }
+      return true
+    }
+
     for (let i = 0; i < msgs.length; i++) {
       const m = msgs[i]
       const blockMsgId = String(m?.sourceMsgId ?? m?.id ?? '').trim() || String(m?.id ?? '').trim()
@@ -213,8 +271,8 @@ export function buildMessageBlocks(options) {
       const prev = msgs[i - 1]
       const isUser = m.role === 'user'
 
-      const nextIsSame = !!(next && next.role === m.role && (!groupChat || next.senderId === m.senderId))
-      const prevIsSame = !!(prev && prev.role === m.role && (!groupChat || prev.senderId === m.senderId))
+      const nextIsSame = !!next && continuesRun(m, next)
+      const prevIsSame = !!prev && continuesRun(prev, m)
       const isLastInGroup = !nextIsSame
       const isFirstInGroup = !prevIsSame
 
@@ -341,6 +399,32 @@ export function buildMessageBlocks(options) {
         continue
       }
 
+      if (m && m.isFile) {
+        result.push({
+          type: 'file',
+          key: 'file-' + m.id,
+          msgId: blockMsgId,
+          isUser,
+          mb: isLastInGroup ? 'mb-2' : 'mb-[2px]',
+          fileName: m.fileName || '文件',
+          fileText: String(m.fileText ?? ''),
+          fileSize: m.fileSize,
+          fileMime: m.fileExtracted ? 'text/plain' : (m.fileMime || ''),
+          fileExtracted: m.fileExtracted || '',
+          generating: false,
+          animClass: bubbleAnimClass,
+          contextContent: '[文件] ' + (m.fileName || ''),
+          isGroupChat: groupChat,
+          senderName: isFirstInGroup ? senderName : null,
+          senderAvatar,
+          senderAvatarType,
+          showAvatar: forceShowAvatar || (isLastInGroup && (groupChat || shouldShowChatAvatars)),
+          metaText: tailMetaText,
+          ...createFavoriteState(m, null)
+        })
+        continue
+      }
+
       if (m && m.isMockImage) {
         const mockText = String(m.mockImageText || m.content || '').trim()
         const placeholder = resolveMockImagePlaceholder(
@@ -376,6 +460,7 @@ export function buildMessageBlocks(options) {
           isUser,
           mb: isLastInGroup ? 'mb-2' : 'mb-[2px]',
           imageUrl: resolvedImageUrl,
+          time: Number(m.time || 0),
           animClass: bubbleAnimClass,
           contextContent: '[图片]',
           isGroupChat: groupChat,
@@ -454,6 +539,8 @@ export function buildMessageBlocks(options) {
         allowMockImage: isUser || aiMockImageEnabled,
         allowMusic: isUser || aiMusicEnabled,
         allowMeet: isUser || aiMeetEnabled,
+        allowRecall: isUser || aiRecallEnabled,
+        allowFile: !isUser && aiFileEnabled,
         allowNarration: !isUser
       }
       const parts = getCachedParsedParts(m, displayContent, parseOptions)
@@ -473,9 +560,10 @@ export function buildMessageBlocks(options) {
         continue
       }
 
+      // 旁白和撤回提示都是居中的系统行，不参与气泡尾巴/头像/已读标记的归属
       const renderPartIndexes = []
       for (let idx = 0; idx < parts.length; idx += 1) {
-        if (parts[idx].type !== 'narration') renderPartIndexes.push(idx)
+        if (parts[idx].type !== 'narration' && parts[idx].type !== 'recall') renderPartIndexes.push(idx)
       }
       const firstRenderPartIndex = renderPartIndexes.length > 0 ? renderPartIndexes[0] : -1
       const lastRenderPartIndex = renderPartIndexes.length > 0 ? renderPartIndexes[renderPartIndexes.length - 1] : -1
@@ -496,6 +584,22 @@ export function buildMessageBlocks(options) {
               animClass: narrationAnimClass
             })
           }
+          continue
+        }
+
+        if (part.type === 'recall') {
+          result.push({
+            type: 'recall',
+            key: 'recall-' + m.id + '-' + partIndex,
+            msgId: blockMsgId,
+            partIndex,
+            msgPartKey: favoritePartIndexToKey(partIndex),
+            isUser,
+            recallerName: isUser ? '你' : (senderName || String(m.senderName || '').trim() || contactName || '对方'),
+            text: String(part.content ?? ''),
+            animate: anim,
+            contextContent: String(part.content ?? '')
+          })
           continue
         }
 
@@ -665,6 +769,33 @@ export function buildMessageBlocks(options) {
           continue
         }
 
+        if (part.type === 'file') {
+          const fileText = String(part.content || '')
+          result.push({
+            type: 'file',
+            key: 'file-' + m.id + '-' + partIndex,
+            msgId: blockMsgId,
+            partIndex,
+            isUser,
+            mb: (isLastInGroup && isLastRenderPart) ? 'mb-2' : 'mb-[2px]',
+            fileName: part.name,
+            fileText,
+            fileSize: new Blob([fileText]).size,
+            fileMime: '',
+            generating: part.complete === false,
+            animClass: bubbleAnimClass,
+            contextContent: '[文件] ' + part.name,
+            isGroupChat: groupChat,
+            senderName: (isFirstInGroup && isFirstRenderPart) ? senderName : null,
+            senderAvatar,
+            senderAvatarType,
+            showAvatar: forceShowAvatar || (isLastInGroup && isLastRenderPart && (groupChat || shouldShowChatAvatars)),
+            metaText: (isLastInGroup && isLastRenderPart) ? tailMetaText : '',
+            ...createFavoriteState(m, partIndex)
+          })
+          continue
+        }
+
         if (part.type === 'mockImage') {
           const placeholder = resolveMockImagePlaceholder(getMockImagePlaceholder ? getMockImagePlaceholder() : '')
           const mockText = String(part.text || '').trim()
@@ -743,27 +874,38 @@ export function buildMessageBlocks(options) {
         const isFirstNormalPart = normalIndex === 0
         normalIndex += 1
 
-        let bubbleClass = isUser ? 'bubble-user' : 'bubble-ai'
-        if (isLastInGroup && isLastNormalPart) {
-          bubbleClass += ' has-tail'
-        }
-        if (!isLastNormalPart || nextIsSame) {
-          bubbleClass += ' in-group'
-        }
+        // has-tail / in-group 在全部块生成后按「下一个可见块」统一决定，见 applyBubbleTails
+        const bubbleClass = isUser ? 'bubble-user' : 'bubble-ai'
 
         let replyText = ''
+        let replyFromUser = !isUser
+        let replyToMsgId = ''
+        let replyToPartKey = ''
         let bubbleText = String(part.content ?? '')
 
         const { quote: partQuote, cleanText } = extractQuoteFromText(bubbleText)
         if (partQuote) {
           replyText = normalizeReplyPreviewText(partQuote)
           bubbleText = cleanText
+          const quotedMsg = findQuotedMessage(partQuote, i)
+          if (quotedMsg) {
+            replyFromUser = quotedMsg.role === 'user'
+            replyToMsgId = String(quotedMsg.sourceMsgId ?? quotedMsg.id ?? '')
+            replyToPartKey = findQuotedPartKey(quotedMsg, partQuote)
+          }
         } else if ((m.replyTo || m.replyToText) && isFirstNormalPart) {
-          const org = m.replyTo ? idMap.get(m.replyTo) : null
+          const org = m.replyTo ? idMap.get(String(m.replyTo)) : null
           replyText = normalizeReplyPreviewText(
             m.replyToText != null ? m.replyToText : (org ? org.content : '已删除')
           )
+          if (org) {
+            replyFromUser = org.role === 'user'
+            replyToMsgId = String(org.sourceMsgId ?? org.id ?? '')
+            replyToPartKey = findQuotedPartKey(org, m.replyToText ?? org.content)
+          }
         }
+
+        const jumboGlyphs = getJumboEmojiGlyphs(bubbleText)
 
         const mb = (isLastInGroup && isLastNormalPart) ? 'mb-2' : 'mb-[2px]'
         const metaText = (isLastInGroup && isLastNormalPart) ? tailMetaText : ''
@@ -778,7 +920,12 @@ export function buildMessageBlocks(options) {
           bubbleClass,
           animClass: bubbleAnimClass,
           replyText,
+          replyFromUser,
+          replyToMsgId,
+          replyToPartKey,
           text: bubbleText,
+          jumboEmoji: jumboGlyphs.length,
+          emojiAnim: jumboGlyphs.length > 0 ? getEmojiAnimationKind(jumboGlyphs) : '',
           emotion: part.emotion || 'normal',
           metaText,
           contextContent: String(part.content ?? ''),
@@ -788,10 +935,99 @@ export function buildMessageBlocks(options) {
           senderAvatarType,
           showAvatar: forceShowAvatar || (isLastInGroup && isLastNormalPart && (groupChat || shouldShowChatAvatars)),
           fromOffline: !!m.fromOffline,
+          runEnd: isLastInGroup,
+          runMsgId: String(m.id),
           ...createFavoriteState(m, partIndex)
         })
       }
     }
 
-  return result
+  applyBubbleTails(result)
+  return groupImageBlocks(result)
+}
+
+// 一次多选发出的几张图（逐条存成图片消息、时间几乎相同）合并成一个相册块
+const IMAGE_BATCH_WINDOW_MS = 2000
+
+function canJoinImageGroup(prev, block) {
+  if (prev?.type !== 'image' || block?.type !== 'image') return false
+  if (prev.isUser !== block.isUser) return false
+  if (prev.senderName !== block.senderName && block.senderName) return false
+  if (prev.isGroupChat && prev.senderAvatar !== block.senderAvatar) return false
+  const gap = Math.abs(Number(block.time || 0) - Number(prev.time || 0))
+  return Number(prev.time) > 0 && Number(block.time) > 0 && gap <= IMAGE_BATCH_WINDOW_MS
+}
+
+function toImageGroupItem(block) {
+  return {
+    key: block.key,
+    msgId: block.msgId,
+    imageUrl: block.imageUrl,
+    msgPartKey: block.msgPartKey,
+    favorited: block.favorited,
+    reactions: block.reactions
+  }
+}
+
+function groupImageBlocks(blocks) {
+  const output = []
+  let k = 0
+  while (k < blocks.length) {
+    const first = blocks[k]
+    let end = k + 1
+    while (end < blocks.length && canJoinImageGroup(blocks[end - 1], blocks[end])) end += 1
+    if (end - k < 2) {
+      output.push(first)
+      k += 1
+      continue
+    }
+    const members = blocks.slice(k, end)
+    const last = members[members.length - 1]
+    output.push({
+      ...first,
+      type: 'imageGroup',
+      key: 'imggrp-' + first.key,
+      mb: last.mb,
+      images: members.map(toImageGroupItem),
+      contextContent: `[图片×${members.length}]`,
+      showAvatar: last.showAvatar,
+      metaText: last.metaText,
+      favorited: members.every(item => item.favorited),
+      reactions: members.flatMap((item, idx) => (Array.isArray(item.reactions) ? item.reactions : [])
+        .map(reaction => ({ ...reaction, key: `${idx}-${reaction.key}` })))
+    })
+    k = end
+  }
+  return output
+}
+
+// 居中的系统行不打断气泡段落，也不抢尾巴
+const TAIL_TRANSPARENT_TYPES = new Set(['narration', 'recall', 'reasoning', 'toolLog'])
+
+function isPlainBubble(block) {
+  return block?.type === 'bubble' && !(Number(block.jumboEmoji) > 0)
+}
+
+// 尾巴长在一段连续气泡的最后一个上：后面紧跟卡片/图片/贴纸/大号表情，
+// 或者这条消息就是段落末尾（换人、隔了很久、已读不回）时都要有尾巴
+function applyBubbleTails(blocks) {
+  for (let k = 0; k < blocks.length; k += 1) {
+    const block = blocks[k]
+    if (block.type !== 'bubble') continue
+    let next = null
+    for (let j = k + 1; j < blocks.length; j += 1) {
+      if (!TAIL_TRANSPARENT_TYPES.has(blocks[j].type)) {
+        next = blocks[j]
+        break
+      }
+    }
+    const hasTail = !next
+      || !isPlainBubble(next)
+      || (next.runMsgId !== block.runMsgId && block.runEnd)
+    block.bubbleClass += hasTail ? ' has-tail' : ' in-group'
+    delete block.runEnd
+  }
+  for (const block of blocks) {
+    if (block.type === 'bubble') delete block.runMsgId
+  }
 }

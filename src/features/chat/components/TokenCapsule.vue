@@ -527,6 +527,8 @@ const systemCoreEst = computed(() => {
   if (settingsStore.allowAIGift) lines.push('Gift card feature enabled')
   if (settingsStore.allowAIVoice) lines.push('Voice bubble feature enabled')
   if (settingsStore.allowAIMockImage) lines.push('Mock image feature enabled')
+  if (settingsStore.allowAIFile) lines.push('File output enabled: <file name>')
+  if (settingsStore.allowAIRecall) lines.push('Recall token enabled: (recall:text)')
   return t(lines.join('\n'))
 })
 

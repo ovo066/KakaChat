@@ -36,6 +36,7 @@ function getTranscriptContent(message) {
   if (!message) return ''
   if (message.isImage) return '[图片]'
   if (message.isSticker) return '[贴纸]'
+  if (message.isFile) return `[文件: ${message.fileName || ''}]`
   return truncateContextText(message.content)
 }
 

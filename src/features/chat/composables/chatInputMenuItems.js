@@ -16,6 +16,14 @@ export const PRIMARY_PLUS_MENU_ITEMS = Object.freeze([
     iconColorClass: 'text-[var(--primary-color)]'
   },
   {
+    key: 'file',
+    event: 'openFile',
+    label: '文件',
+    iconClass: 'ph-fill ph-paperclip text-[20px]',
+    iconBgClass: 'bg-[#007AFF]',
+    iconColorClass: 'text-white'
+  },
+  {
     key: 'sticker',
     event: 'openSticker',
     label: '贴纸',
@@ -42,6 +50,14 @@ export const PRIMARY_PLUS_MENU_ITEMS = Object.freeze([
 ])
 
 export const SECONDARY_PLUS_MENU_ITEMS = Object.freeze([
+  {
+    key: 'threads',
+    event: 'openThreads',
+    label: '对话存档',
+    iconClass: 'ph-fill ph-chats-circle text-[20px]',
+    iconBgClass: 'bg-[#5E5CE6]',
+    iconColorClass: 'text-white'
+  },
   {
     key: 'search',
     event: 'openSearch',

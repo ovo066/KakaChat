@@ -1,11 +1,20 @@
 <template>
-  <div :class="rootClass" :data-msg-id="block.msgId" :data-msg-part="block.msgPartKey || 'message'" @click="emit('click', $event)">
+  <div
+    :class="[rootClass, { 'chat-row-has-reactions': hasReactions }]"
+    :data-msg-id="block.msgId"
+    :data-msg-part="block.msgPartKey || 'message'"
+    @click="emit('click', $event)"
+  >
     <ChatMultiSelectCheckbox :visible="multiSelectMode" :selected="selected" />
 
     <template v-if="block.isUser">
       <div v-if="showChatAvatars && !block.showAvatar" class="w-8 ml-2 shrink-0"></div>
       <div class="flex flex-col items-end max-w-[75%]">
-        <slot :is-user="true" />
+        <div v-if="hasReactions" class="chat-reaction-anchor is-shell">
+          <slot :is-user="true" />
+          <ChatReactionBadges :reactions="block.reactions" :is-user="true" />
+        </div>
+        <slot v-else :is-user="true" />
         <div v-if="block.metaText" class="msg-meta user-meta">{{ block.metaText }}</div>
       </div>
       <div
@@ -34,7 +43,11 @@
         >
           {{ block.senderName }}
         </div>
-        <slot :is-user="false" />
+        <div v-if="hasReactions" class="chat-reaction-anchor is-shell">
+          <slot :is-user="false" />
+          <ChatReactionBadges :reactions="block.reactions" :is-user="false" />
+        </div>
+        <slot v-else :is-user="false" />
         <div v-if="block.metaText" class="msg-meta ai-meta">{{ block.metaText }}</div>
       </div>
     </template>
@@ -42,9 +55,11 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import ChatMultiSelectCheckbox from './ChatMultiSelectCheckbox.vue'
+import ChatReactionBadges from './ChatReactionBadges.vue'
 
-defineProps({
+const props = defineProps({
   block: { type: Object, required: true },
   multiSelectMode: { type: Boolean, default: false },
   selected: { type: Boolean, default: false },
@@ -53,4 +68,6 @@ defineProps({
 })
 
 const emit = defineEmits(['click'])
+
+const hasReactions = computed(() => Array.isArray(props.block.reactions) && props.block.reactions.length > 0)
 </script>

@@ -307,8 +307,8 @@ export function useChatMessageActions({
     }
   }
 
-  // 智能界面里的 send 按钮：以用户身份发出这句话，并立刻请求角色回应
-  async function sendFromSmartUI(text) {
+  // 以用户身份发出这句话，并立刻请求角色回应（智能界面的 send 按钮、桌面角色卡的快捷回复）
+  async function sendAndRequestReply(text, extra = {}) {
     const txt = String(text ?? '').trim().slice(0, 2000)
     if (!txt || !store.activeChat || assistantReplyInFlight.value > 0) return false
     if (isGroupChat.value && store.activeChat.groupMode === 'multi' && !store.selectedMemberId) {
@@ -316,7 +316,7 @@ export function useChatMessageActions({
       return false
     }
 
-    const newMsg = { id: makeId('msg'), role: 'user', content: txt, time: Date.now(), readStatus: 'unread', fromSmartUI: true }
+    const newMsg = { id: makeId('msg'), role: 'user', content: txt, time: Date.now(), readStatus: 'unread', ...extra }
     store.activeChat.msgs.push(newMsg)
     store.ui.animateMsgId = newMsg.id
     void onMessageSent(store.activeChat, txt, scheduleSave).catch(() => {})
@@ -332,6 +332,10 @@ export function useChatMessageActions({
       showToast(error?.message || '回复失败')
     }
     return true
+  }
+
+  function sendFromSmartUI(text) {
+    return sendAndRequestReply(text, { fromSmartUI: true })
   }
 
   if (getCurrentInstance()) {
@@ -438,6 +442,7 @@ export function useChatMessageActions({
     inputText,
     requestAssistantReply,
     saveEdit,
+    sendAndRequestReply,
     sendMessage
   }
 }

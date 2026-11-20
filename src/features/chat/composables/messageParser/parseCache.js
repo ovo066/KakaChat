@@ -23,7 +23,9 @@ function makeParseOptionsSignature(options) {
     options.allowMockImage !== false ? '1' : '0',
     options.allowMusic !== false ? '1' : '0',
     options.allowMeet !== false ? '1' : '0',
-    options.allowNarration !== false ? '1' : '0'
+    options.allowRecall !== false ? '1' : '0',
+    options.allowNarration !== false ? '1' : '0',
+    options.allowFile !== false ? '1' : '0'
   ].join('')
 }
 

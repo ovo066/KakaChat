@@ -1,9 +1,11 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useMusicStore } from '../../stores/music'
 import { useSettingsStore } from '../../stores/settings'
 import { resolveMusicTrack } from '../../features/music'
 import { useToast } from '../../composables/useToast'
+import { getImageTint } from '../../utils/imageTint'
+import { isIos26ThemeActive } from '../../utils/themeDefaults'
 
 const props = defineProps({
   title: { type: String, default: '' },
@@ -17,6 +19,13 @@ const musicStore = useMusicStore()
 const store = useSettingsStore()
 const { showToast } = useToast()
 const resolving = ref(false)
+// iOS 26 主题里卡片底色取自封面（跨域封面取不到时用主题里的默认深色）
+const coverTint = ref('')
+const cardStyle = computed(() => (coverTint.value ? { '--music-tint': coverTint.value } : null))
+
+watch(() => [props.cover, isIos26ThemeActive(store)], async ([cover, enabled]) => {
+  coverTint.value = enabled && cover ? await getImageTint(cover) : ''
+}, { immediate: true })
 
 async function playMusic() {
   if (resolving.value) return
@@ -65,7 +74,7 @@ async function playMusic() {
 
 <template>
   <div class="music-card-wrap" @click="playMusic">
-    <div class="music-card" :class="isUser ? 'music-card-user' : 'music-card-ai'">
+    <div class="music-card" :class="isUser ? 'music-card-user' : 'music-card-ai'" :style="cardStyle">
       <div class="music-card-body">
         <!-- Thumbnail -->
         <div class="music-card-thumb">
@@ -85,6 +94,12 @@ async function playMusic() {
         <div class="music-card-info">
           <h4 class="music-card-title">{{ title || '未知曲目' }}</h4>
           <p class="music-card-artist">{{ artist || '未知歌手' }}</p>
+          <p class="music-card-source"><i class="ph-fill ph-music-notes"></i>音乐</p>
+        </div>
+        <!-- 右侧播放键：默认隐藏，iOS 26 主题里显示（仿 Apple Music 分享卡片） -->
+        <div class="music-card-cta" aria-hidden="true">
+          <i v-if="resolving" class="ph ph-circle-notch animate-spin"></i>
+          <i v-else class="ph-fill ph-play"></i>
         </div>
       </div>
 
@@ -199,6 +214,11 @@ async function playMusic() {
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.music-card-source,
+.music-card-cta {
+  display: none;
 }
 
 .music-card-footer {

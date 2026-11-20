@@ -1,0 +1,298 @@
+/* ── 表情回应（iMessage Tapback）：气泡角上的回应徽标 + 长按时的回应面板 ── */
+
+.chat-reaction-anchor {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  max-width: 100%;
+}
+
+.chat-reaction-anchor.is-shell {
+  align-items: inherit;
+}
+
+/* 徽标探出气泡上沿，行首留出空间；content-visibility 的绘制裁剪也不会切到它 */
+.chat-row-has-reactions {
+  padding-top: 26px;
+}
+
+.chat-reactions {
+  position: absolute;
+  top: -24px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  pointer-events: none;
+}
+
+/* 回应挂在气泡朝向屏幕中间的那个角上 */
+.chat-reactions.is-ai {
+  right: -16px;
+  flex-direction: row-reverse;
+}
+
+.chat-reactions.is-user {
+  left: -16px;
+}
+
+.chat-reaction {
+  position: relative;
+  display: flex;
+  --chat-reaction-bg: var(--bubble-ai-bg, #E9E9EB);
+  --chat-reaction-ring: var(--chat-bg, #fff);
+}
+
+.chat-reactions.is-user .chat-reaction + .chat-reaction {
+  margin-left: -9px;
+}
+
+.chat-reactions.is-ai .chat-reaction + .chat-reaction {
+  margin-right: -9px;
+}
+
+/* 自己点的回应用自己的气泡色，对方点的用对方的气泡色（iOS 18 同款） */
+.chat-reaction.is-mine {
+  --chat-reaction-bg: var(--bubble-user-bg, #007AFF);
+}
+
+.chat-reaction-body {
+  position: relative;
+  z-index: 1;
+  min-width: 30px;
+  height: 30px;
+  padding: 0 6px;
+  border-radius: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  color: var(--text-primary, #000);
+  background: var(--chat-reaction-bg);
+  box-shadow: 0 0 0 2px var(--chat-reaction-ring);
+}
+
+.chat-reaction.is-mine .chat-reaction-body {
+  color: #fff;
+}
+
+.chat-reaction-dot {
+  position: absolute;
+  display: none;
+  border-radius: 50%;
+  background: var(--chat-reaction-bg);
+  box-shadow: 0 0 0 2px var(--chat-reaction-ring);
+}
+
+.chat-reaction.has-tail .chat-reaction-dot {
+  display: block;
+}
+
+/* 小尾巴只落在气泡圆角的留白里，不压到第一行字 */
+.chat-reaction-dot.is-lg {
+  width: 8px;
+  height: 8px;
+  bottom: -2px;
+}
+
+.chat-reaction-dot.is-sm {
+  width: 4px;
+  height: 4px;
+  bottom: -4px;
+}
+
+.chat-reactions.is-ai .chat-reaction-dot.is-lg { left: 0; }
+.chat-reactions.is-ai .chat-reaction-dot.is-sm { left: -5px; }
+.chat-reactions.is-user .chat-reaction-dot.is-lg { right: 0; }
+.chat-reactions.is-user .chat-reaction-dot.is-sm { right: -5px; }
+
+.chat-reaction .tapback-emoji {
+  font-size: 17px;
+  line-height: 1;
+}
+
+.chat-reaction-count {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+.chat-reaction-pop-enter-active {
+  transition: transform 0.5s cubic-bezier(0.2, 1.6, 0.4, 1), opacity 0.18s ease;
+}
+
+.chat-reaction-pop-leave-active {
+  transition: transform 0.18s ease, opacity 0.18s ease;
+}
+
+.chat-reaction-pop-enter-from,
+.chat-reaction-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.2);
+}
+
+.tapback-emoji {
+  display: inline-block;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  line-height: 1;
+}
+
+/* ── 长按时出现在气泡上方的回应面板 ── */
+.tapback-picker {
+  --tapback-picker-bg: rgba(255, 255, 255, 0.95);
+  position: fixed;
+  z-index: 1003;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 5px;
+  border-radius: 999px;
+  background: var(--tapback-picker-bg);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.2), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.dark .tapback-picker {
+  --tapback-picker-bg: rgba(44, 44, 46, 0.95);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+}
+
+.tapback-picker.is-ai { transform-origin: 26px calc(100% + 10px); }
+.tapback-picker.is-user { transform-origin: calc(100% - 26px) calc(100% + 10px); }
+
+.tapback-picker-dot {
+  position: absolute;
+  border-radius: 50%;
+  background: var(--tapback-picker-bg);
+}
+
+.tapback-picker-dot.is-lg {
+  width: 12px;
+  height: 12px;
+  bottom: -6px;
+}
+
+.tapback-picker-dot.is-sm {
+  width: 6px;
+  height: 6px;
+  bottom: -13px;
+}
+
+.tapback-picker.is-ai .tapback-picker-dot.is-lg { left: 24px; }
+.tapback-picker.is-ai .tapback-picker-dot.is-sm { left: 17px; }
+.tapback-picker.is-user .tapback-picker-dot.is-lg { right: 24px; }
+.tapback-picker.is-user .tapback-picker-dot.is-sm { right: 17px; }
+
+.tapback-option {
+  position: relative;
+  z-index: 1;
+  width: 39px;
+  height: 39px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.15s ease, background-color 0.18s ease;
+  animation: tapback-option-in 0.42s cubic-bezier(0.2, 1.5, 0.4, 1) both;
+  animation-delay: calc(var(--i, 0) * 22ms + 40ms);
+}
+
+.tapback-option .tapback-emoji {
+  font-size: 25px;
+  transition: transform 0.18s cubic-bezier(0.2, 1.4, 0.4, 1);
+}
+
+@media (hover: hover) {
+  .tapback-option:hover .tapback-emoji {
+    transform: scale(1.18) translateY(-1px);
+  }
+}
+
+.tapback-option:active {
+  transform: scale(0.84);
+}
+
+/* 已选：蓝色圆底托住 emoji，再点一次取消 */
+.tapback-option.is-active {
+  background: var(--primary-color, #007AFF);
+}
+
+.tapback-option.is-active .tapback-emoji {
+  font-size: 22px;
+}
+
+@keyframes tapback-option-in {
+  from { opacity: 0; transform: scale(0.3) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+.tapback-pop-enter-active {
+  transition: transform 0.4s cubic-bezier(0.2, 1.35, 0.4, 1), opacity 0.16s ease;
+}
+
+.tapback-pop-leave-active {
+  transition: transform 0.16s ease, opacity 0.16s ease;
+}
+
+.tapback-pop-enter-from,
+.tapback-pop-leave-to {
+  opacity: 0;
+  transform: scale(0.55);
+}
+
+/* ── 「+」展开的 emoji 选择面板（占用菜单的位置） ── */
+.tapback-emoji-panel {
+  position: fixed;
+  z-index: 1003;
+  width: 300px;
+  padding: 8px 8px 10px;
+  border-radius: 18px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  background: var(--card-bg, #fff);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
+}
+
+.dark .tapback-emoji-panel {
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.5), 0 0 0 0.5px rgba(255, 255, 255, 0.08);
+}
+
+.tapback-emoji-title {
+  margin: 4px 6px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text-secondary, #8E8E93);
+}
+
+.tapback-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 2px;
+}
+
+.tapback-emoji-cell {
+  height: 34px;
+  border-radius: 9px;
+  font-size: 22px;
+  line-height: 34px;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  transition: transform 0.12s ease, background-color 0.12s ease;
+}
+
+.tapback-emoji-cell:active {
+  transform: scale(0.86);
+  background: rgba(120, 120, 128, 0.16);
+}
+
+.tapback-emoji-cell.is-active {
+  background: color-mix(in srgb, var(--primary-color, #007AFF) 18%, transparent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tapback-option,
+  .chat-reaction-pop-enter-active,
+  .tapback-pop-enter-active {
+    animation: none;
+    transition-duration: 0.01s;
+  }
+}

@@ -4,7 +4,8 @@ export const DESKTOP_APPS = [
     label: '消息',
     route: '/messages',
     icon: 'ph-fill ph-chat-circle-dots',
-    homeBackground: 'rgba(59,130,246,0.2)',
+    paperBackground: '#BFD8C2',
+    duoIcon: 'ph-duotone ph-chat-circle-dots',
     previewBackground: 'linear-gradient(180deg, #34C759 0%, #1FA447 100%)'
   },
   {
@@ -12,7 +13,8 @@ export const DESKTOP_APPS = [
     label: '面具',
     route: '/persona',
     icon: 'ph-fill ph-mask-happy',
-    homeBackground: 'rgba(168,85,247,0.2)',
+    paperBackground: '#D8C8E6',
+    duoIcon: 'ph-duotone ph-mask-happy',
     previewBackground: 'linear-gradient(180deg, #AF52DE 0%, #8944AB 100%)'
   },
   {
@@ -20,7 +22,8 @@ export const DESKTOP_APPS = [
     label: '设置',
     route: '/settings',
     icon: 'ph-fill ph-gear',
-    homeBackground: 'rgba(249,115,22,0.2)',
+    paperBackground: '#D9D3C7',
+    duoIcon: 'ph-duotone ph-gear-six',
     previewBackground: 'linear-gradient(180deg, #A1A1A6 0%, #636366 100%)'
   },
   {
@@ -28,7 +31,8 @@ export const DESKTOP_APPS = [
     label: '日志',
     route: '/debug-logs',
     icon: 'ph-fill ph-terminal-window',
-    homeBackground: 'rgba(14,165,233,0.2)',
+    paperBackground: '#C6D7E0',
+    duoIcon: 'ph-duotone ph-terminal-window',
     previewBackground: 'linear-gradient(180deg, #38BDF8 0%, #0284C7 100%)'
   },
   {
@@ -36,7 +40,8 @@ export const DESKTOP_APPS = [
     label: '世界书',
     route: '/lorebook',
     icon: 'ph-fill ph-book-open',
-    homeBackground: 'rgba(34,197,94,0.2)',
+    paperBackground: '#E7D4AE',
+    duoIcon: 'ph-duotone ph-book-open-text',
     previewBackground: 'linear-gradient(180deg, #FF9500 0%, #FF6B00 100%)'
   },
   {
@@ -44,7 +49,8 @@ export const DESKTOP_APPS = [
     label: '动态',
     route: '/moments',
     icon: 'ph-fill ph-shooting-star',
-    homeBackground: 'rgba(156,163,175,0.2)',
+    paperBackground: '#F1C8B8',
+    duoIcon: 'ph-duotone ph-shooting-star',
     previewBackground: 'linear-gradient(180deg, #8E8E93 0%, #636366 100%)'
   },
   {
@@ -52,7 +58,8 @@ export const DESKTOP_APPS = [
     label: '美化',
     route: '/theme',
     icon: 'ph-fill ph-paint-brush',
-    homeBackground: 'rgba(244,114,182,0.2)',
+    paperBackground: '#F0C3CC',
+    duoIcon: 'ph-duotone ph-paint-brush-household',
     previewBackground: 'linear-gradient(180deg, #FF2D55 0%, #D91A45 100%)'
   },
   {
@@ -60,7 +67,8 @@ export const DESKTOP_APPS = [
     label: '相册',
     route: '/album',
     icon: 'ph-fill ph-images-square',
-    homeBackground: 'rgba(255,149,0,0.2)',
+    paperBackground: '#E9CDA8',
+    duoIcon: 'ph-duotone ph-images-square',
     previewBackground: 'linear-gradient(180deg, #FFB340 0%, #FF7A00 100%)'
   },
   {
@@ -68,7 +76,8 @@ export const DESKTOP_APPS = [
     label: '见面',
     route: '/meet',
     icon: 'ph-fill ph-heart',
-    homeBackground: 'rgba(236,72,153,0.2)',
+    paperBackground: '#EBB8B6',
+    duoIcon: 'ph-duotone ph-heart',
     previewBackground: 'linear-gradient(180deg, #FF5D8F 0%, #E23370 100%)'
   },
   {
@@ -76,7 +85,8 @@ export const DESKTOP_APPS = [
     label: '日程',
     route: '/planner',
     icon: 'ph-fill ph-calendar-check',
-    homeBackground: 'rgba(255,182,185,0.2)',
+    paperBackground: '#C8D3EC',
+    duoIcon: 'ph-duotone ph-calendar-check',
     previewBackground: 'linear-gradient(180deg, #FFB6B9 0%, #FF8A8F 100%)'
   },
   {
@@ -84,8 +94,18 @@ export const DESKTOP_APPS = [
     label: '收藏',
     route: '/favorites',
     icon: 'ph-fill ph-star',
-    homeBackground: 'rgba(251,191,36,0.2)',
+    paperBackground: '#F2DE97',
+    duoIcon: 'ph-duotone ph-star',
     previewBackground: 'linear-gradient(180deg, #FFD95A 0%, #FFB300 100%)'
+  },
+  {
+    key: 'games',
+    label: '游戏',
+    route: '/games',
+    icon: 'ph-fill ph-game-controller',
+    paperBackground: '#BFD3D6',
+    duoIcon: 'ph-duotone ph-game-controller',
+    previewBackground: 'linear-gradient(180deg, #3E7C82 0%, #183B47 100%)'
   }
 ]
 

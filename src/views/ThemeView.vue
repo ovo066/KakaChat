@@ -133,19 +133,75 @@
             />
           </div>
 
-          <!-- 桌面小组件 -->
-          <div
-            class="flex items-center justify-between px-4 py-3 cursor-pointer active:bg-gray-100 dark:active:bg-gray-800"
-            @click="showWidgetManager = true"
-          >
+          <!-- 灵动岛 -->
+          <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)]">
             <div class="flex items-center gap-3">
-              <i class="ph-fill ph-squares-four text-xl text-[#FF9500]"></i>
-              <span class="text-[17px] text-[var(--text-primary)]">桌面小组件</span>
+              <i class="ph-fill ph-device-mobile-camera text-xl text-[#1C1C1E] dark:text-white"></i>
+              <div class="flex flex-col">
+                <span class="text-[17px] text-[var(--text-primary)]">常驻灵动岛</span>
+                <span class="text-[12px] text-[var(--text-secondary)]">{{ dynamicIslandHintText }}</span>
+              </div>
             </div>
-            <div class="flex items-center gap-2">
-              <span class="text-[15px] text-[var(--text-secondary)]">{{ widgetsStore.widgets.length }} 个</span>
-              <i class="ph ph-caret-right text-[var(--text-secondary)]"></i>
+            <IosToggle
+              :model-value="settingsStore.theme.showDynamicIsland"
+              @update:modelValue="handleDynamicIslandToggle"
+            />
+          </div>
+
+          <!-- 手账桌面 -->
+          <div class="px-4 py-3 border-b border-[var(--border-color)]">
+            <div class="flex items-center gap-3">
+              <i class="ph-fill ph-notebook text-xl text-[#FF9500]"></i>
+              <div class="flex flex-col">
+                <span class="text-[17px] text-[var(--text-primary)]">桌面纸张</span>
+                <span class="text-[12px] text-[var(--text-secondary)]">{{ settingsStore.wallpaper ? '选「壁纸」就把上面的壁纸铺成桌面' : '设了壁纸之后，这里可以选「壁纸」' }}</span>
+              </div>
             </div>
+            <div class="grid grid-cols-5 gap-2 mt-3">
+              <button
+                v-for="option in homePaperOptions"
+                :key="option.value"
+                class="px-1 py-2 rounded-[12px] text-[13px] font-medium border transition-colors disabled:opacity-40"
+                :class="currentHomePaper === option.value
+                  ? 'bg-[var(--primary-color)] text-white border-transparent'
+                  : 'bg-transparent text-[var(--text-primary)] border-[var(--border-color)]'"
+                :disabled="option.value === 'photo' && !settingsStore.wallpaper"
+                @click="setHomePaper(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 桌面时段 -->
+          <div class="flex items-center justify-between px-4 py-3 border-b border-[var(--border-color)]">
+            <div class="flex items-center gap-3">
+              <i class="ph-fill ph-moon-stars text-xl text-[#5856D6]"></i>
+              <span class="text-[17px] text-[var(--text-primary)]">时段</span>
+            </div>
+            <div class="flex gap-2">
+              <button
+                v-for="option in dayNightOptions"
+                :key="option.value"
+                class="px-3 py-1.5 rounded-[10px] text-[13px] font-medium border transition-colors"
+                :class="activeDayNight === option.value
+                  ? 'bg-[var(--primary-color)] text-white border-transparent'
+                  : 'bg-transparent text-[var(--text-primary)] border-[var(--border-color)]'"
+                @click="setDayNight(option.value)"
+              >
+                {{ option.label }}
+              </button>
+            </div>
+          </div>
+
+          <!-- 整理 / 还原桌面 -->
+          <div class="flex">
+            <button class="flex-1 px-4 py-3 text-[15px] text-[var(--primary-color)] border-r border-[var(--border-color)]" @click="router.push({ path: '/', query: { edit: '1' } })">
+              整理桌面小组件
+            </button>
+            <button class="flex-1 px-4 py-3 text-[15px] text-red-500" @click="handleResetDesktop">
+              还原桌面
+            </button>
           </div>
         </div>
       </div>
@@ -424,11 +480,6 @@
       </div>
     </div>
 
-    <!-- 小组件管理器 -->
-    <WidgetManager
-      v-if="showWidgetManager"
-      @close="showWidgetManager = false"
-    />
   </div>
 </template>
 
@@ -436,21 +487,20 @@
 import { ref, h, nextTick, watch, defineComponent, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useSettingsStore } from '../stores/settings'
-import { useWidgetsStore } from '../stores/widgets'
 import { useStorage } from '../composables/useStorage'
 import { useToast } from '../composables/useToast'
 import { compressImage } from '../composables/useImage'
 import { showConfirm } from '../composables/useConfirm'
 import { resolveMockImagePlaceholder } from '../features/chat'
 import { DESKTOP_APPS } from '../data/homeApps'
+import { HOME_PAPERS } from '../features/home'
 import { downloadBlob } from '../utils/download'
 import { normalizeImageUrlInput } from '../utils/mediaUrl'
-import WidgetManager from '../components/widgets/WidgetManager.vue'
+import { APPEARANCE_MODE_MANUAL, APPEARANCE_MODE_SYSTEM, isAutoAppearanceMode } from '../utils/appearance'
 import IosToggle from '../components/common/IosToggle.vue'
 
 const router = useRouter()
 const settingsStore = useSettingsStore()
-const widgetsStore = useWidgetsStore()
 const { scheduleSave } = useStorage()
 const { showToast } = useToast()
 
@@ -460,7 +510,6 @@ const lockWallpaperInput = ref(null)
 const mockImageInput = ref(null)
 const themeImportInput = ref(null)
 const currentIconKey = ref(null)
-const showWidgetManager = ref(false)
 
 const showSaveDialog = ref(false)
 const newThemeName = ref('')
@@ -768,6 +817,16 @@ async function syncAndroidStatusBarMode(showPhoneStatusBar) {
   }
 }
 
+const dynamicIslandHintText = computed(() => {
+  if (!settingsStore.theme.showPhoneStatusBar || isIOSDevice()) return '需开启小手机状态栏；关闭时仅在通知时出现'
+  return settingsStore.theme.showDynamicIsland ? '顶部始终显示黑色胶囊' : '关闭时仅在通知时出现'
+})
+
+function handleDynamicIslandToggle(nextValue) {
+  settingsStore.theme.showDynamicIsland = !!nextValue
+  scheduleSave()
+}
+
 async function handlePhoneStatusBarToggle(nextValue) {
   settingsStore.theme.showPhoneStatusBar = !!nextValue
   applyAndSave()
@@ -884,6 +943,44 @@ async function handleResetIcons() {
   settingsStore.resetAppIcons()
   scheduleSave()
   showToast('已重置')
+}
+
+const homePaperOptions = [...HOME_PAPERS, { value: 'photo', label: '壁纸' }]
+const dayNightOptions = [
+  { label: '白天', value: 'light' },
+  { label: '夜里', value: 'dark' },
+  { label: '自动', value: 'auto' }
+]
+const activeDayNight = computed(() => {
+  if (isAutoAppearanceMode(settingsStore.appearanceMode)) return 'auto'
+  return settingsStore.isDark ? 'dark' : 'light'
+})
+const currentHomePaper = computed(() => {
+  const value = settingsStore.theme.homePaper
+  if (value === 'photo') return settingsStore.wallpaper ? 'photo' : 'dots'
+  return homePaperOptions.some(option => option.value === value) ? value : 'dots'
+})
+
+function setHomePaper(value) {
+  settingsStore.theme.homePaper = value
+  scheduleSave()
+}
+
+function setDayNight(value) {
+  if (value === 'auto') {
+    // 已是自动（跟随系统/定时）时保留原方式，具体方式在 设置 › 外观与显示 里切换
+    if (!isAutoAppearanceMode(settingsStore.appearanceMode)) settingsStore.appearanceMode = APPEARANCE_MODE_SYSTEM
+  } else {
+    settingsStore.appearanceMode = APPEARANCE_MODE_MANUAL
+    settingsStore.setDarkMode(value === 'dark')
+  }
+  scheduleSave()
+}
+
+async function handleResetDesktop() {
+  const confirmed = await showConfirm({ message: '把桌面恢复成默认的样子？便利贴和照片会被清掉。', destructive: true })
+  if (!confirmed) return
+  router.push({ path: '/', query: { edit: 'reset' } })
 }
 
 async function handleClearWallpaper() {

@@ -1,6 +1,7 @@
 import { resolveOptionalMaxTokens, parseOptionalTemperature } from './chatCompletions'
 import { prepareApiKey } from '../../utils/httpHeaders'
 import { normalizeCacheConfig } from './providerFormats'
+import { applyAnthropicThinking } from './thinkingConfig'
 
 const DEFAULT_ANTHROPIC_VERSION = '2023-06-01'
 const DEFAULT_ERROR_TEXT_LIMIT = 200
@@ -346,6 +347,8 @@ export function buildAnthropicMessagesRequest(cfg = {}, messages = [], options =
       body.tool_choice = { type: 'tool', name: options.tool_choice }
     }
   }
+
+  applyAnthropicThinking(body, options.reasoningEffort ?? cfg.reasoningEffort)
 
   return {
     url: resolveAnthropicMessagesUrl(cfg.url),

@@ -51,7 +51,10 @@ const THEME_CHAT_UI_KEYS = [
   'headerAvatarPosition',
   'lockScreenUnlockMode',
   'bubbleTailStyle',
-  'timestampPosition'
+  // 'ios26'：点聊天顶部的头像/名字先打开 iOS 26 联系人卡片
+  'contactCardStyle',
+  'timestampPosition',
+  'homePaper'
 ]
 
 export const THEME_STRING_KEYS = [
@@ -71,7 +74,9 @@ export const THEME_BOOLEAN_DEFAULTS = {
   showImageButton: false,
   showMicButton: false,
   bubbleShowAvatar: false,
-  showPhoneStatusBar: true
+  showPhoneStatusBar: true,
+  // 常驻显示顶部灵动岛；关闭时只在通知/音乐等活动时出现
+  showDynamicIsland: false
 }
 
 export function createDefaultThemeAppIcons() {
@@ -95,7 +100,8 @@ export function createDefaultThemeState() {
 
 // Keys that represent user preferences rather than visual theme properties.
 // When applying a preset/theme that omits these, the existing value is preserved.
-const THEME_PRESERVE_KEYS = new Set(['lockScreenUnlockMode'])
+const THEME_PRESERVE_KEYS = new Set(['lockScreenUnlockMode', 'homePaper'])
+const THEME_PRESERVE_BOOLEAN_KEYS = new Set(['showDynamicIsland'])
 
 export function applyThemeFieldDefaults(target, data = {}) {
   const source = data && typeof data === 'object' ? data : {}
@@ -119,6 +125,16 @@ export function applyThemeFieldDefaults(target, data = {}) {
       target[key] = !!source[key]
       return
     }
+    if (THEME_PRESERVE_BOOLEAN_KEYS.has(key) && typeof target[key] === 'boolean') return
     target[key] = fallback
   })
+}
+
+/**
+ * 当前是否是 iOS 26（液态玻璃）主题：联系人卡片、音乐卡片取色等只在这个主题里启用。
+ * 旧版本套用的液态玻璃主题没有 contactCardStyle 字段，按主题 id 兜底。
+ * @param {{ theme?: { contactCardStyle?: string }, activeThemeId?: string }} settingsStore
+ */
+export function isIos26ThemeActive(settingsStore) {
+  return settingsStore?.theme?.contactCardStyle === 'ios26' || settingsStore?.activeThemeId === 'preset_liquidGlass'
 }

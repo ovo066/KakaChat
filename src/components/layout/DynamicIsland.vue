@@ -1,22 +1,26 @@
 <template>
   <div
-    class="di-container"
-    :class="{ 'di-expanded': isExpanded, 'di-collapsing': isCollapsing }"
+    class="di"
+    :class="{ 'is-resident': resident, 'is-open': open, 'is-closing': isCollapsing && !open }"
+    role="status"
+    aria-live="polite"
     @click="onTap"
   >
-    <div class="di-glow"></div>
     <Transition name="di-content">
-      <div v-if="isExpanded && notification" class="di-content">
+      <div v-if="open" class="di-content">
         <div class="di-avatar">
-          <img v-if="notification.avatar && notification.avatarType === 'image'" :src="notification.avatar" class="w-full h-full object-cover rounded-full">
-          <span v-else class="text-base">{{ notification.avatar || '📝' }}</span>
+          <img v-if="notification.avatar && notification.avatarType === 'image'" :src="notification.avatar" alt="">
+          <span v-else>{{ notification.avatar || (isMoment ? '📝' : '💬') }}</span>
         </div>
         <div class="di-text">
-          <div class="di-name">{{ notification.name || '动态' }}</div>
-          <div class="di-preview">{{ notification.preview }}</div>
+          <div class="di-title-row">
+            <span class="di-name">{{ notification.name || (isMoment ? '朋友圈' : '新消息') }}</span>
+            <span class="di-time">现在</span>
+          </div>
+          <div class="di-preview">{{ notification.preview || (isMoment ? '发布了新动态' : '发来一条消息') }}</div>
         </div>
-        <div class="di-badge">
-          <i class="ph ph-shooting-star"></i>
+        <div class="di-app" :class="isMoment ? 'is-moment' : 'is-chat'" aria-hidden="true">
+          <i :class="isMoment ? 'ph-fill ph-aperture' : 'ph-fill ph-chat-circle'"></i>
         </div>
       </div>
     </Transition>
@@ -24,13 +28,22 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDynamicIsland } from '../../composables/useDynamicIsland'
 import { useContactsStore } from '../../stores/contacts'
 
+defineProps({
+  // 常驻：空闲时也显示黑色胶囊；否则只在有通知时从顶部"长"出来
+  resident: { type: Boolean, default: false }
+})
+
 const router = useRouter()
 const store = useContactsStore()
 const { isExpanded, isCollapsing, notification, handleTap } = useDynamicIsland()
+
+const open = computed(() => isExpanded.value && !!notification.value)
+const isMoment = computed(() => notification.value?.type !== 'chat' && !!notification.value?.momentId)
 
 function onTap() {
   if (!isExpanded.value) return
@@ -50,132 +63,100 @@ function onTap() {
 </script>
 
 <style scoped>
-.di-container {
+/* 尺寸按 iPhone 15 Pro 灵动岛（126×37pt，距顶 11pt）等比到 390 宽的小手机 */
+.di {
+  --di-spring: cubic-bezier(0.2, 1.22, 0.36, 1);
+  --di-ease: cubic-bezier(0.32, 0.72, 0, 1);
   position: absolute;
   left: 50%;
   top: 11px;
-  transform: translateX(-50%);
   z-index: 60;
-  width: 112px;
-  height: 32px;
-  background: rgba(10, 10, 10, 0.78);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 0.5px solid rgba(255, 255, 255, 0.08);
-  border-radius: 20px;
+  width: 124px;
+  height: 36px;
+  border-radius: 18px;
+  background: #000;
   overflow: hidden;
   pointer-events: none;
-  transition:
-    width 0.55s cubic-bezier(0.32, 0.72, 0, 1.1),
-    height 0.55s cubic-bezier(0.32, 0.72, 0, 1.1),
-    border-radius 0.55s cubic-bezier(0.32, 0.72, 0, 1.1),
-    top 0.4s cubic-bezier(0.32, 0.72, 0, 1),
-    background 0.4s ease,
-    border-color 0.6s ease,
-    box-shadow 0.6s ease;
-}
-
-/* Glow layer behind content */
-.di-glow {
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
   opacity: 0;
-  background: radial-gradient(
-    ellipse at 50% 0%,
-    var(--primary-color, #007AFF) 0%,
-    transparent 70%
-  );
-  filter: blur(12px);
-  transition: opacity 0.6s ease;
-  pointer-events: none;
+  transform: translateX(-50%) scale(0.9);
+  transition:
+    width 0.42s var(--di-ease),
+    height 0.42s var(--di-ease),
+    border-radius 0.42s var(--di-ease),
+    transform 0.42s var(--di-ease),
+    box-shadow 0.3s ease,
+    opacity 0.2s ease 0.3s;
 }
 
-/* Expanded state */
-.di-expanded {
-  width: calc(100% - 28px);
-  height: 70px;
-  border-radius: 26px;
-  top: 8px;
+.di.is-resident {
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
+}
+
+.di.is-open {
+  width: calc(100% - 22px);
+  max-width: 368px;
+  height: 76px;
+  border-radius: 38px;
+  opacity: 1;
+  transform: translateX(-50%) scale(1);
   pointer-events: auto;
   cursor: pointer;
-  background: rgba(12, 12, 12, 0.85);
-  border-color: rgba(255, 255, 255, 0.15);
-  box-shadow:
-    0 10px 40px rgba(0, 0, 0, 0.35),
-    0 0 0 0.5px rgba(255, 255, 255, 0.1) inset;
-  animation: di-breathe 3s ease-in-out 0.6s infinite;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.24);
+  transition:
+    width 0.6s var(--di-spring),
+    height 0.6s var(--di-spring),
+    border-radius 0.6s var(--di-spring),
+    transform 0.5s var(--di-spring),
+    box-shadow 0.4s ease,
+    opacity 0.1s ease;
 }
 
-.di-expanded .di-glow {
-  opacity: 0.15;
-  animation: di-glow-pulse 3s ease-in-out 0.6s infinite;
+.di.is-open:active {
+  transform: translateX(-50%) scale(0.97);
+  transition-duration: 0.18s;
 }
 
-/* Collapsing micro-bounce */
-.di-collapsing {
-  animation: di-shrink-bounce 0.5s cubic-bezier(0.32, 0.72, 0, 1) forwards;
+/* 收回胶囊时轻轻回弹一下，和系统一样"落座" */
+.di.is-resident.is-closing {
+  animation: di-settle 0.62s var(--di-ease) 0.3s;
 }
 
-/* Breathing shadow animation */
-@keyframes di-breathe {
-  0%, 100% {
-    box-shadow:
-      0 10px 40px rgba(0, 0, 0, 0.35),
-      0 0 0 0.5px rgba(255, 255, 255, 0.1) inset;
-  }
-  50% {
-    box-shadow:
-      0 10px 40px rgba(0, 0, 0, 0.4),
-      0 0 20px -4px var(--primary-color, #007AFF),
-      0 0 0 0.5px rgba(255, 255, 255, 0.18) inset;
-  }
+@keyframes di-settle {
+  0% { transform: translateX(-50%) scale(1); }
+  35% { transform: translateX(-50%) scale(1.06, 0.94); }
+  70% { transform: translateX(-50%) scale(0.98, 1.02); }
+  100% { transform: translateX(-50%) scale(1); }
 }
 
-@keyframes di-glow-pulse {
-  0%, 100% { opacity: 0.12; }
-  50% { opacity: 0.25; }
-}
-
-@keyframes di-shrink-bounce {
-  0% {
-    transform: translateX(-50%) scale(1.02);
-  }
-  40% {
-    transform: translateX(-50%) scale(0.96);
-  }
-  100% {
-    transform: translateX(-50%) scale(1);
-  }
-}
-
-/* Content layout */
 .di-content {
   display: flex;
   align-items: center;
   gap: 11px;
-  padding: 0 15px;
   width: 100%;
   height: 100%;
-  color: white;
+  padding: 0 14px 0 13px;
+  color: #fff;
 }
 
 .di-avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 12px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.04));
-  border: 0.5px solid rgba(255, 255, 255, 0.15);
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
-  flex-shrink: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+  font-size: 26px;
+  line-height: 1;
+  background: #2c2c2e;
 }
 
 .di-avatar img {
-  border-radius: 12px;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .di-text {
@@ -183,64 +164,94 @@ function onTap() {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 1px;
+}
+
+.di-title-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
 }
 
 .di-name {
-  font-size: 13.5px;
-  font-weight: 700;
-  line-height: 1.2;
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
   letter-spacing: -0.2px;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  color: #fff;
+}
+
+.di-time {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: rgba(235, 235, 245, 0.5);
 }
 
 .di-preview {
-  font-size: 12px;
-  line-height: 1.3;
-  color: rgba(255, 255, 255, 0.65);
+  font-size: 14px;
+  line-height: 19px;
+  color: rgba(235, 235, 245, 0.68);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.di-badge {
-  width: 28px;
-  height: 28px;
+.di-app {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
   border-radius: 50%;
-  background: var(--primary-color, #007AFF);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  font-size: 14px;
+  font-size: 17px;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
 }
 
-/* Content enter/leave transitions */
+.di-app.is-chat {
+  background: linear-gradient(180deg, #5cf777, #0dbf2f);
+}
+
+.di-app.is-moment {
+  background: linear-gradient(135deg, #ff9f0a, #ff375f);
+}
+
+/* 形状先撑开，内容再从模糊里浮出来 */
 .di-content-enter-active {
   transition:
-    opacity 0.4s cubic-bezier(0.23, 1, 0.32, 1) 0.12s,
-    transform 0.5s cubic-bezier(0.23, 1, 0.32, 1) 0.12s,
-    filter 0.4s ease 0.12s;
+    opacity 0.32s ease 0.16s,
+    transform 0.5s var(--di-spring, ease) 0.12s,
+    filter 0.32s ease 0.16s;
 }
+
 .di-content-leave-active {
-  transition:
-    opacity 0.2s ease,
-    transform 0.2s ease,
-    filter 0.2s ease;
+  transition: opacity 0.16s ease, transform 0.2s ease, filter 0.16s ease;
 }
+
 .di-content-enter-from {
   opacity: 0;
-  transform: scale(0.92) translateY(6px);
-  filter: blur(4px);
+  transform: scale(0.86);
+  filter: blur(6px);
 }
+
 .di-content-leave-to {
   opacity: 0;
-  transform: scale(0.96);
-  filter: blur(2px);
+  transform: scale(0.9);
+  filter: blur(4px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .di,
+  .di.is-open {
+    transition-duration: 0.01s;
+  }
+
+  .di.is-resident.is-closing {
+    animation: none;
+  }
 }
 </style>

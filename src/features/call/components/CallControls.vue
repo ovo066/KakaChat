@@ -1,7 +1,7 @@
 <template>
   <div class="px-4 pb-3 ctrl-bar-entrance relative z-10">
-    <!-- 更多按钮（视频模式，控制栏上方） -->
-    <div v-if="isVideo" class="flex justify-center mb-2">
+    <!-- 更多按钮（控制栏上方）：视频是素材管理 + 切换模式，语音是通话背景 -->
+    <div class="flex justify-center mb-2">
       <div class="relative">
         <button
           class="w-8 h-8 rounded-full flex items-center justify-center bg-white/[0.06] border border-white/[0.08] active:bg-white/[0.12] transition-all"
@@ -20,10 +20,11 @@
                 class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/75 text-[13px] active:bg-white/[0.08] transition-colors"
                 @click="handleResources"
               >
-                <i class="ph ph-gear text-[15px] text-white/50"></i>
-                <span>素材管理</span>
+                <i class="ph text-[15px] text-white/50" :class="isVideo ? 'ph-gear' : 'ph-image'"></i>
+                <span>{{ isVideo ? '素材管理' : '通话背景' }}</span>
               </button>
               <button
+                v-if="isVideo"
                 class="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl text-white/75 text-[13px] active:bg-white/[0.08] transition-colors"
                 @click="handleToggleVideoMode"
               >

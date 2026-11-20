@@ -1,5 +1,10 @@
 import { computed } from 'vue'
 import { isMessagePartFavorited } from '../../../utils/messageFavorites'
+import { haptic } from '../../../utils/haptic'
+import { getUserReaction, toggleUserReaction } from './messageReactions'
+
+// 系统行、线下卡片、智能界面不挂回应
+const REACTION_DISABLED_BLOCK_TYPES = new Set(['offlineCard', 'recall', 'smartUI', 'narration', 'timestamp'])
 
 export function useChatContextActions({
   store,
@@ -8,7 +13,9 @@ export function useChatContextActions({
   contextMenuBlockKey,
   contextMenuMsgId,
   contextMenuPartIndex,
+  contextMenuPartKey,
   hideContextMenu,
+  scheduleSave,
   showCallHistoryModal,
   enterMultiSelect,
   toggleFavorite,
@@ -18,7 +25,29 @@ export function useChatContextActions({
 }) {
   function showContextMenu(event, block) {
     if (multiSelectMode.value) return
-    showContextMenuBase(event, block)
+    const canReact = !!block?.msgId && !REACTION_DISABLED_BLOCK_TYPES.has(block?.type)
+    showContextMenuBase(event, block, { canReact })
+  }
+
+  function findContextMessage() {
+    const msgId = contextMenuMsgId.value
+    const msgs = store.activeChat?.msgs
+    if (msgId == null || msgId === '' || !Array.isArray(msgs)) return null
+    // 气泡上的 msgId 统一是字符串，旧数据/示例消息的 id 可能是数字
+    const target = String(msgId)
+    return msgs.find(m => m && String(m.id) === target) || null
+  }
+
+  const contextMenuReaction = computed(() => getUserReaction(findContextMessage(), contextMenuPartKey?.value))
+
+  function handleReact(emoji) {
+    const msg = findContextMessage()
+    if (msg && emoji) {
+      toggleUserReaction(msg, contextMenuPartKey?.value, emoji)
+      haptic(12)
+      scheduleSave?.()
+    }
+    hideContextMenu()
   }
 
   function openCallHistoryFromBubble() {
@@ -32,12 +61,8 @@ export function useChatContextActions({
   }
 
   const contextMenuFavorited = computed(() => {
-    const msgId = contextMenuMsgId.value
-    if (!msgId) return false
-    const msgs = store.activeChat?.msgs
-    if (!Array.isArray(msgs)) return false
-    const msg = msgs.find(m => m.id === msgId)
-    return isMessagePartFavorited(msg, contextMenuPartIndex.value)
+    const msg = findContextMessage()
+    return msg ? isMessagePartFavorited(msg, contextMenuPartIndex.value) : false
   })
 
   function handleFavorite() {
@@ -58,7 +83,9 @@ export function useChatContextActions({
     openCallHistoryFromBubble,
     handleEnterMultiSelect,
     contextMenuFavorited,
+    contextMenuReaction,
     handleFavorite,
-    handleFavoriteSelectedBlocks
+    handleFavoriteSelectedBlocks,
+    handleReact
   }
 }

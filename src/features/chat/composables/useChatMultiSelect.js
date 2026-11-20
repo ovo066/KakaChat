@@ -36,7 +36,12 @@ export function useChatMultiSelect({
   function getSelectedBlocks() {
     const blocks = (typeof getBlocks === 'function' ? getBlocks() : []) || []
     if (selectedBlockKeys.value.size === 0) return []
-    return blocks.filter(block => selectedBlockKeys.value.has(block.key))
+    // 相册块按其中每张图（各自是一条图片消息）展开，删除/收藏逐条处理
+    return blocks
+      .filter(block => selectedBlockKeys.value.has(block.key))
+      .flatMap(block => (block.type === 'imageGroup' && Array.isArray(block.images)
+        ? block.images.map(item => ({ ...block, ...item, type: 'image', images: undefined }))
+        : [block]))
   }
 
   async function deleteSelectedBlocks() {

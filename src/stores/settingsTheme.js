@@ -115,6 +115,9 @@ export const useThemeStore = defineStore('settings-theme', () => {
   const themeLibraryState = createDefaultThemeLibraryState()
 
   const isDark = ref(themeSettings.isDark)
+  const appearanceMode = ref(themeSettings.appearanceMode)
+  const darkScheduleStart = ref(themeSettings.darkScheduleStart)
+  const darkScheduleEnd = ref(themeSettings.darkScheduleEnd)
   const savedThemes = ref(themeLibraryState.savedThemes)
   const activeThemeId = ref(themeLibraryState.activeThemeId)
   const theme = ref(themeLibraryState.theme)
@@ -315,6 +318,9 @@ export const useThemeStore = defineStore('settings-theme', () => {
 
   return {
     isDark,
+    appearanceMode,
+    darkScheduleStart,
+    darkScheduleEnd,
     savedThemes,
     activeThemeId,
     theme,

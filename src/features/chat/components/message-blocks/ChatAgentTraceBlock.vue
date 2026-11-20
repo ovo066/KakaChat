@@ -5,62 +5,44 @@
     :data-msg-id="block.msgId"
     data-msg-part="agent-trace"
   >
-    <div class="agent-trace-card" :class="{ 'agent-trace-card-expanded': expanded }">
+    <div
+      class="agent-trace"
+      :class="{
+        'agent-trace-open': expanded,
+        'agent-trace-error': isError,
+        'agent-trace-live': isLive
+      }"
+    >
       <button
         type="button"
         class="agent-trace-trigger"
-        :class="[
-          block.type === 'reasoning' ? 'agent-trace-trigger-reasoning' : 'agent-trace-trigger-tool',
-          block.type === 'toolLog' && !block.success ? 'agent-trace-trigger-error' : ''
-        ]"
         :aria-expanded="expanded"
         :aria-controls="detailsId"
         @click="expanded = !expanded"
       >
-        <span class="agent-trace-icon" aria-hidden="true">
-          <i :class="iconClass"></i>
-        </span>
-        <span class="agent-trace-label">
-          {{ collapsedLabel }}
-        </span>
-        <span v-if="block.type === 'reasoning' && block.streaming" class="agent-trace-live-dot" aria-label="正在思考"></span>
-        <i
-          v-if="block.type === 'toolLog' && !block.success"
-          class="ph ph-warning-circle agent-trace-status-icon agent-trace-status-error"
-          aria-hidden="true"
-        ></i>
-        <i class="ph ph-caret-right agent-trace-chevron" :class="{ 'agent-trace-chevron-open': expanded }" aria-hidden="true"></i>
+        <i class="agent-trace-icon" :class="iconClass" aria-hidden="true"></i>
+        <span class="agent-trace-label">{{ label }}</span>
+        <span v-if="hint" class="agent-trace-hint">{{ hint }}</span>
+        <i v-if="isError" class="ph ph-warning-circle agent-trace-error-icon" aria-label="调用失败"></i>
+        <i class="ph ph-caret-right agent-trace-chevron" aria-hidden="true"></i>
       </button>
 
       <Transition name="agent-trace-expand">
         <div v-if="expanded" :id="detailsId" class="agent-trace-details">
           <template v-if="block.type === 'reasoning'">
-            <div class="agent-trace-detail-heading">
-              <div class="agent-trace-detail-title">
-                <i class="ph ph-brain"></i>
-                <span>思考过程</span>
-              </div>
-              <span class="agent-trace-round">第 {{ block.round }} 轮</span>
-            </div>
             <div class="agent-trace-reasoning-text">{{ block.content }}</div>
+            <div v-if="block.round > 1" class="agent-trace-meta">
+              <span>第 {{ block.round }} 轮</span>
+            </div>
           </template>
 
           <template v-else>
-            <div class="agent-trace-detail-heading">
-              <div class="agent-trace-detail-title min-w-0">
-                <i :class="iconClass"></i>
-                <span class="truncate">{{ block.title }}</span>
-              </div>
-              <span class="agent-trace-result-badge" :class="block.success ? 'agent-trace-result-success' : 'agent-trace-result-error'">
-                {{ block.success ? '已完成' : '失败' }}
-              </span>
-            </div>
             <div class="agent-trace-meta">
+              <span :class="block.success ? 'agent-trace-ok' : 'agent-trace-fail'">{{ block.success ? '已完成' : '失败' }}</span>
+              <span v-if="block.durationLabel">{{ block.durationLabel }}</span>
               <span>{{ block.sourceLabel }}</span>
               <span>第 {{ block.round }} 轮</span>
-              <span v-if="block.durationLabel">{{ block.durationLabel }}</span>
             </div>
-            <div v-if="block.subtitle" class="agent-trace-subtitle">{{ block.subtitle }}</div>
             <div v-if="block.summary" class="agent-trace-summary">{{ block.summary }}</div>
             <div v-if="block.argsPreview" class="agent-trace-section">
               <div class="agent-trace-section-label">参数</div>
@@ -90,15 +72,23 @@ const expanded = ref(false)
 
 const detailsId = computed(() => `agent-trace-${String(props.block.key || props.block.msgId || 'item').replace(/[^a-zA-Z0-9_-]/g, '-')}`)
 
-const collapsedLabel = computed(() => {
-  if (props.block.type === 'reasoning') {
-    return props.block.summary || '已完成思考'
-  }
+const isReasoning = computed(() => props.block.type === 'reasoning')
+const isLive = computed(() => isReasoning.value && !!props.block.streaming)
+const isError = computed(() => props.block.type === 'toolLog' && !props.block.success)
+
+const label = computed(() => {
+  if (isReasoning.value) return isLive.value ? '思考中' : '已思考'
   return props.block.title || '工具调用'
 })
 
+// 标签后的浅色补充：思考显示内容摘要，工具显示副标题
+const hint = computed(() => {
+  if (isReasoning.value) return props.block.summary || ''
+  return props.block.subtitle || ''
+})
+
 const iconClass = computed(() => {
-  if (props.block.type === 'reasoning') return 'ph ph-clock'
+  if (isReasoning.value) return 'ph ph-sparkle'
 
   const name = `${props.block.title || ''} ${props.block.subtitle || ''}`.toLowerCase()
   if (name.includes('web') || name.includes('browser') || name.includes('网页')) return 'ph ph-globe-hemisphere-west'
@@ -112,275 +102,217 @@ const iconClass = computed(() => {
 </script>
 
 <style scoped>
+/* 无底板、无边框：直接以浅色文字铺在聊天背景上，跟时间戳/已送达同一套颜色 */
 .agent-trace-row {
+  --trace-ink: var(--meta-color, #8E8E93);
+  --trace-ink-strong: color-mix(in srgb, var(--text-primary, #111) 72%, var(--meta-color, #8E8E93));
+  --trace-rule: color-mix(in srgb, var(--meta-color, #8E8E93) 32%, transparent);
   display: flex;
   justify-content: flex-start;
   width: 100%;
-  margin: 2px 0 5px;
+  margin: 0 0 2px;
 }
 
 .agent-trace-row-offset {
   padding-left: 40px;
 }
 
-.agent-trace-card {
-  max-width: min(84%, 520px);
+.agent-trace {
   min-width: 0;
-}
-
-.agent-trace-card-expanded {
-  width: min(88%, 520px);
+  max-width: min(86%, 520px);
+  padding-left: 8px;
 }
 
 .agent-trace-trigger {
   display: flex;
   align-items: center;
-  width: fit-content;
+  gap: 6px;
   max-width: 100%;
-  min-height: 34px;
-  gap: 8px;
-  padding: 6px 10px;
-  border: 1px solid color-mix(in srgb, var(--border-color, #d8d8d8) 46%, transparent 54%);
-  border-radius: 999px;
-  color: color-mix(in srgb, var(--text-secondary, #8e8e93) 88%, transparent 12%);
-  background: color-mix(in srgb, var(--card-bg, #fff) 22%, transparent 78%);
-  backdrop-filter: blur(12px) saturate(130%);
-  -webkit-backdrop-filter: blur(12px) saturate(130%);
+  min-height: 28px;
+  padding: 3px 0;
+  border: 0;
+  background: none;
+  color: var(--trace-ink);
   font: inherit;
   text-align: left;
+  cursor: pointer;
   -webkit-tap-highlight-color: transparent;
-  transition: transform 120ms ease, background-color 160ms ease, border-color 160ms ease;
+  transition: opacity 140ms ease;
 }
 
 .agent-trace-trigger:active {
-  transform: scale(0.985);
-}
-
-.agent-trace-trigger-reasoning {
-  min-height: 30px;
-  padding: 4px 2px;
-  border-color: transparent;
-  border-radius: 0;
-  background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-}
-
-.agent-trace-trigger-error {
-  border-color: color-mix(in srgb, #ef4444 34%, var(--border-color, #d8d8d8) 66%);
+  opacity: 0.55;
 }
 
 .agent-trace-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 18px;
-  height: 18px;
-  flex: 0 0 18px;
-  font-size: 16px;
-  color: color-mix(in srgb, var(--text-secondary, #8e8e93) 82%, transparent 18%);
-}
-
-.agent-trace-trigger-tool .agent-trace-icon {
-  color: color-mix(in srgb, var(--text-secondary, #8e8e93) 82%, transparent 18%);
+  flex: 0 0 16px;
+  width: 16px;
+  font-size: 15px;
+  text-align: center;
 }
 
 .agent-trace-label {
+  flex: 0 0 auto;
+  font-size: 13px;
+  line-height: 18px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.agent-trace-hint {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font-size: 14px;
-  line-height: 20px;
-  font-weight: 450;
-  letter-spacing: 0.005em;
-}
-
-.agent-trace-trigger-reasoning .agent-trace-label {
-  font-weight: 400;
   font-size: 13px;
+  line-height: 18px;
+  opacity: 0.72;
 }
 
-.agent-trace-status-icon {
+.agent-trace-error-icon {
   flex: 0 0 auto;
-  font-size: 15px;
-}
-
-.agent-trace-status-error {
-  color: color-mix(in srgb, #dc4c4c 74%, var(--text-secondary, #8e8e93) 26%);
-}
-
-.agent-trace-live-dot {
-  width: 5px;
-  height: 5px;
-  flex: 0 0 5px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--text-secondary, #8e8e93) 72%, transparent 28%);
-  animation: agent-trace-pulse 1.15s ease-in-out infinite;
+  font-size: 14px;
+  color: #E5484D;
 }
 
 .agent-trace-chevron {
   flex: 0 0 auto;
-  font-size: 14px;
-  color: color-mix(in srgb, var(--text-secondary, #8e8e93) 72%, transparent 28%);
-  transition: transform 180ms ease;
+  font-size: 11px;
+  opacity: 0.6;
+  transition: transform 200ms ease;
 }
 
-.agent-trace-chevron-open {
+.agent-trace-open .agent-trace-chevron {
   transform: rotate(90deg);
 }
 
+/* 思考中：文字上扫过一道柔光 */
+.agent-trace-live .agent-trace-label {
+  background: linear-gradient(90deg, var(--trace-ink) 35%, var(--text-primary, #111) 50%, var(--trace-ink) 65%) 0 0 / 300% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: agent-trace-shimmer 1.8s linear infinite;
+}
+
+/* 展开内容：挂在标签下方，左侧一根细线对齐图标中心 */
 .agent-trace-details {
-  margin-top: 5px;
-  padding: 13px 14px 14px;
-  border: 1px solid color-mix(in srgb, var(--border-color, #d8d8d8) 48%, transparent 52%);
-  border-radius: 17px;
-  color: var(--text-primary, #111);
-  background:
-    linear-gradient(145deg, color-mix(in srgb, var(--card-bg, #fff) 72%, transparent 28%), color-mix(in srgb, var(--card-bg, #fff) 48%, transparent 52%));
-  box-shadow: 0 14px 34px rgba(15, 23, 42, 0.055), inset 0 1px 0 rgba(255, 255, 255, 0.28);
-  backdrop-filter: blur(22px) saturate(145%);
-  -webkit-backdrop-filter: blur(22px) saturate(145%);
+  position: relative;
+  margin: 2px 0 6px;
+  padding: 2px 0 2px 22px;
 }
 
-.agent-trace-detail-heading {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-}
-
-.agent-trace-detail-title {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-primary, #111);
-}
-
-.agent-trace-detail-title i {
-  color: color-mix(in srgb, var(--text-secondary, #8e8e93) 80%, transparent 20%);
-  font-size: 16px;
-}
-
-.agent-trace-round,
-.agent-trace-meta,
-.agent-trace-subtitle {
-  color: var(--text-secondary, #8e8e93);
-  font-size: 11px;
-}
-
-.agent-trace-meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px 10px;
-  margin-top: 7px;
-}
-
-.agent-trace-subtitle {
-  margin-top: 7px;
-  line-height: 1.45;
-  word-break: break-word;
-}
-
-.agent-trace-summary {
-  margin-top: 9px;
-  color: var(--text-primary, #111);
-  font-size: 12px;
-  line-height: 1.55;
-  word-break: break-word;
+.agent-trace-details::before {
+  content: "";
+  position: absolute;
+  left: 7.5px;
+  top: 2px;
+  bottom: 2px;
+  width: 1px;
+  border-radius: 1px;
+  background: var(--trace-rule);
 }
 
 .agent-trace-reasoning-text {
   max-height: 320px;
-  margin-top: 10px;
   overflow: auto;
-  padding-left: 11px;
-  border-left: 2px solid color-mix(in srgb, var(--text-secondary, #8e8e93) 24%, transparent 76%);
-  color: color-mix(in srgb, var(--text-primary, #111) 78%, var(--text-secondary, #8e8e93) 22%);
+  color: var(--trace-ink-strong);
   font-size: 13px;
   line-height: 1.65;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
-.agent-trace-result-badge {
-  flex: 0 0 auto;
-  padding: 2px 7px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 650;
+.agent-trace-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 0;
+  color: var(--trace-ink);
+  font-size: 11.5px;
+  line-height: 16px;
 }
 
-.agent-trace-result-success {
-  color: #087a50;
-  background: rgba(34, 160, 107, 0.12);
+.agent-trace-meta > span + span::before {
+  content: "·";
+  margin: 0 6px;
+  opacity: 0.6;
 }
 
-.agent-trace-result-error {
-  color: #b42318;
-  background: rgba(220, 76, 76, 0.12);
+.agent-trace-reasoning-text + .agent-trace-meta {
+  margin-top: 6px;
+}
+
+.agent-trace-ok {
+  color: #30A46C;
+}
+
+.agent-trace-fail {
+  color: #E5484D;
+}
+
+.agent-trace-summary {
+  margin-top: 6px;
+  color: var(--trace-ink-strong);
+  font-size: 12.5px;
+  line-height: 1.55;
+  word-break: break-word;
 }
 
 .agent-trace-section {
-  margin-top: 11px;
-  padding-top: 10px;
-  border-top: 1px solid color-mix(in srgb, var(--border-color, #d8d8d8) 74%, transparent 26%);
+  margin-top: 8px;
 }
 
 .agent-trace-section-label {
-  margin-bottom: 6px;
-  color: var(--text-secondary, #8e8e93);
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  margin-bottom: 2px;
+  color: var(--trace-ink);
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
 }
 
 .agent-trace-code {
-  max-height: 260px;
+  max-height: 220px;
   margin: 0;
-  padding: 9px 10px;
+  padding: 0;
   overflow: auto;
-  border: 1px solid color-mix(in srgb, var(--border-color, #d8d8d8) 34%, transparent 66%);
-  border-radius: 12px;
-  color: color-mix(in srgb, var(--text-primary, #111) 88%, var(--text-secondary, #8e8e93) 12%);
-  background: color-mix(in srgb, var(--bg-color, #f2f2f7) 34%, transparent 66%);
+  background: none;
+  color: var(--trace-ink-strong);
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
-  font-size: 11px;
-  line-height: 1.55;
+  font-size: 11.5px;
+  line-height: 1.6;
   white-space: pre-wrap;
   word-break: break-word;
 }
 
 .agent-trace-error-text {
-  margin-top: 10px;
-  color: #dc4c4c;
-  font-size: 12px;
+  margin-top: 6px;
+  color: #E5484D;
+  font-size: 12.5px;
   line-height: 1.55;
   word-break: break-word;
 }
 
 .agent-trace-expand-enter-active,
 .agent-trace-expand-leave-active {
-  overflow: hidden;
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition: opacity 180ms ease, transform 180ms ease;
 }
 
 .agent-trace-expand-enter-from,
 .agent-trace-expand-leave-to {
   opacity: 0;
-  transform: translateY(-4px);
+  transform: translateY(-3px);
 }
 
-@keyframes agent-trace-pulse {
-  0%, 100% {
-    opacity: 0.32;
-    transform: scale(0.8);
-  }
-  50% {
-    opacity: 0.9;
-    transform: scale(1.15);
+@keyframes agent-trace-shimmer {
+  from { background-position: 100% 0; }
+  to { background-position: 0 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-trace-live .agent-trace-label {
+    animation: none;
+    color: var(--trace-ink);
+    background: none;
   }
 }
 </style>

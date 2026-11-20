@@ -77,9 +77,9 @@
               @change="save"
             >
               <option :value="null">使用主 API</option>
-              <option v-for="cfg in configs" :key="cfg.id" :value="cfg.id">
-                {{ cfg.name || cfg.model || 'API ' + cfg.id.slice(-4) }}
-              </option>
+<optgroup v-for="g in configsStore.providerGroups" :key="g.provider.id" :label="g.provider.name">
+                <option v-for="cfg in g.models" :key="cfg.id" :value="cfg.id">{{ cfg.modelLabel }}</option>
+              </optgroup>
             </select>
           </div>
           <div class="px-4 py-3 border-t border-[var(--border-color)]">
@@ -398,9 +398,9 @@
               @change="save"
             >
               <option :value="null">使用总结 API</option>
-              <option v-for="cfg in configs" :key="cfg.id" :value="cfg.id">
-                {{ cfg.name || cfg.model || 'API ' + cfg.id.slice(-4) }}
-              </option>
+<optgroup v-for="g in configsStore.providerGroups" :key="g.provider.id" :label="g.provider.name">
+                <option v-for="cfg in g.models" :key="cfg.id" :value="cfg.id">{{ cfg.modelLabel }}</option>
+              </optgroup>
             </select>
           </div>
         </div>
@@ -648,7 +648,6 @@ const { scheduleSave } = useStorage()
 const { initContactMemory } = useMemory()
 
 const contact = computed(() => contactsStore.activeChat)
-const configs = computed(() => configsStore.configs || [])
 const embeddingSettings = computed(() => settingsStore)
 
 const settings = computed(() => {

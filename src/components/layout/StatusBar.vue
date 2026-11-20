@@ -4,7 +4,7 @@
     :class="textColorClass"
   >
     <div class="text-[16px] font-semibold w-20 pl-2 leading-none">{{ time }}</div>
-    <div class="w-[112px] h-[32px] bg-black rounded-[20px] absolute left-1/2 transform -translate-x-1/2 top-[11px] z-50"></div>
+    <div v-if="showIsland" class="w-[124px] h-[36px] bg-black rounded-full absolute left-1/2 transform -translate-x-1/2 top-[11px] z-50"></div>
     <div class="flex items-center gap-[6px] w-20 justify-end pr-2">
       <!-- Signal -->
       <svg width="18" height="12" viewBox="0 0 18 12" fill="currentColor">
@@ -32,6 +32,11 @@ const props = defineProps({
   textColor: {
     type: String,
     default: 'white'
+  },
+  // 静态灵动岛胶囊：仅在锁屏时由状态栏绘制，其余时候交给 DynamicIsland
+  showIsland: {
+    type: Boolean,
+    default: false
   }
 })
 

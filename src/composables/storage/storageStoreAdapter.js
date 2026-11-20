@@ -38,7 +38,7 @@ export function createStorageStoreAdapter({
   const adapter = {}
 
   defineProxyMap(adapter, contactsStore, ['contacts'])
-  defineProxyMap(adapter, configsStore, ['configs', 'activeConfigId'])
+  defineProxyMap(adapter, configsStore, ['providers', 'configs', 'activeConfigId'])
   defineProxyMap(adapter, settingsStore, STORAGE_SETTINGS_PROXY_FIELDS)
   defineProxyMap(adapter, personasStore, ['personas', 'defaultPersonaId'])
   defineProxyMap(adapter, stickersStore, ['stickers', 'stickerGroups'])

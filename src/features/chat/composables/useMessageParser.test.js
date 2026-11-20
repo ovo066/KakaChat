@@ -25,7 +25,8 @@ function createParser(messages, options = {}) {
     getUserAvatar: () => null,
     showNarrations: () => true,
     getMockImagePlaceholder: () => '',
-    getActiveContactId: () => options.activeContactId || ''
+    getActiveContactId: () => options.activeContactId || '',
+    getContactName: () => options.contactName || ''
   })
 }
 
@@ -162,6 +163,64 @@ describe('useMessageParser', () => {
     ])
 
     expect(blocks.value).toEqual([])
+  })
+
+  it('targets the quoted bubble within a multi-bubble assistant reply', () => {
+    const { blocks } = createParser([
+      { id: 'original', role: 'assistant', content: '第一句\n指定气泡\n最后一句' },
+      { id: 'reply', role: 'assistant', content: '[quote:指定气泡] 收到' }
+    ])
+
+    expect(blocks.value.at(-1)).toMatchObject({
+      replyToMsgId: 'original', replyToPartKey: '1', replyText: '指定气泡'
+    })
+  })
+
+  it('resolves persisted reply text against the full bubble before truncating the preview', () => {
+    const quotedText = `${'相同前缀'.repeat(40)}指定气泡`
+    const { blocks } = createParser([
+      { id: 'original', role: 'assistant', content: `${'相同前缀'.repeat(40)}另一气泡\n${quotedText}` },
+      { id: 'reply', role: 'user', content: '收到', replyTo: 'original', replyToText: quotedText }
+    ])
+
+    expect(blocks.value.at(-1)).toMatchObject({ replyToMsgId: 'original', replyToPartKey: '1' })
+    expect(blocks.value.at(-1).replyText.endsWith('…')).toBe(true)
+  })
+
+  it('prefers an exact bubble over an earlier bubble containing the same text', () => {
+    const { blocks } = createParser([
+      { id: 'original', role: 'assistant', content: '指定气泡还有其他内容\n指定气泡' },
+      { id: 'reply', role: 'user', content: '收到', replyTo: 'original', replyToText: '指定气泡' }
+    ])
+
+    expect(blocks.value.at(-1).replyToPartKey).toBe('1')
+  })
+
+  it('keeps original part indexes across media and quoted bubbles with numeric message ids', () => {
+    const { blocks } = createParser([
+      { id: 42, role: 'assistant', content: '(voice:语音内容)\n[quote:前文] 指定气泡' },
+      { id: 'reply', role: 'user', content: '收到', replyTo: '42', replyToText: '[quote:前文] 指定气泡' }
+    ])
+
+    expect(blocks.value.at(-1)).toMatchObject({ replyToMsgId: '42', replyToPartKey: '1' })
+  })
+
+  it('uses source message ids and matches quoted fragments in display content', () => {
+    const { blocks } = createParser([
+      { id: 'preview', sourceMsgId: 'original', role: 'assistant', content: '原始内容', displayContent: '第一句\n这里是指定气泡的内容' },
+      { id: 'reply', role: 'assistant', content: '[引用:指定气泡] 收到' }
+    ])
+
+    expect(blocks.value.at(-1)).toMatchObject({ replyToMsgId: 'original', replyToPartKey: '1' })
+  })
+
+  it('preserves message-level fallback when the quoted bubble is no longer present', () => {
+    const { blocks } = createParser([
+      { id: 'original', role: 'assistant', content: '编辑后的内容' },
+      { id: 'reply', role: 'user', content: '收到', replyTo: 'original', replyToText: '编辑前的内容' }
+    ])
+
+    expect(blocks.value.at(-1)).toMatchObject({ replyToMsgId: 'original', replyToPartKey: '' })
   })
 
   it('renders tool log cards before the assistant bubble when enabled', () => {
@@ -304,5 +363,76 @@ describe('useMessageParser', () => {
       imageUrl: 'data:image/png;base64,abc',
       message: '送给你'
     })
+  })
+
+  it('renders recall tokens as notices and keeps the tail on the last real bubble', () => {
+    const { blocks } = createParser([
+      {
+        id: 'msg-recall',
+        role: 'assistant',
+        content: '在吗\n(recall:其实我想你了)'
+      }
+    ], {
+      contactName: '小雨'
+    })
+
+    expect(blocks.value).toMatchObject([
+      { type: 'bubble', text: '在吗', bubbleClass: 'bubble-ai has-tail' },
+      { type: 'recall', msgId: 'msg-recall', partIndex: 1, recallerName: '小雨', text: '其实我想你了', isUser: false }
+    ])
+  })
+  describe('iMessage bubble tails', () => {
+    const base = 1_700_000_000_000
+    const tailsOf = (blocks) => blocks
+      .filter(block => block.type === 'bubble')
+      .map(block => [block.text, block.bubbleClass.includes('has-tail')])
+
+    it('only tails the last bubble of a quick same-sender run', () => {
+      const { blocks } = createParser([
+        { id: 'u1', role: 'user', content: '在吗', time: base },
+        { id: 'u2', role: 'user', content: '有事问你', time: base + 5_000 }
+      ])
+      expect(tailsOf(blocks.value)).toEqual([['在吗', false], ['有事问你', true]])
+      expect(blocks.value[0].metaText).toBe('')
+    })
+
+    it('starts a new run after a long gap so the earlier bubble keeps its tail', () => {
+      const { blocks } = createParser([
+        { id: 'u1', role: 'user', content: '早', time: base },
+        { id: 'u2', role: 'user', content: '人呢', time: base + 10 * 60_000 }
+      ])
+      expect(tailsOf(blocks.value)).toEqual([['早', true], ['人呢', true]])
+    })
+
+    it('keeps the tail and read mark on a message that was read but not answered', () => {
+      const { blocks } = createParser([
+        { id: 'u1', role: 'user', content: '睡了吗', time: base, readStatus: 'read', readAt: base + 20_000 },
+        { id: 'u2', role: 'user', content: '？', time: base + 60_000, readStatus: 'unread' }
+      ])
+      expect(tailsOf(blocks.value)).toEqual([['睡了吗', true], ['？', true]])
+      expect(blocks.value[0].metaText).toMatch(/已读$/)
+      expect(blocks.value[1].metaText).toMatch(/未读$/)
+    })
+
+    it('tails a bubble that is followed by a card from the same sender', () => {
+      const { blocks } = createParser([
+        { id: 'a1', role: 'assistant', content: '给你听这首' + String.fromCharCode(10) + '(music:晴天:周杰伦)', time: base }
+      ])
+      expect(blocks.value.map(block => block.type)).toEqual(['bubble', 'music'])
+      expect(blocks.value[0].bubbleClass).toBe('bubble-ai has-tail')
+    })
+  })
+
+  it('merges photos sent together into one album block', () => {
+    const base = 1_700_000_000_000
+    const photo = (id, offset) => ({ id, role: 'user', content: '[图片]', isImage: true, imageUrl: `data:image/png;base64,${id}`, time: base + offset })
+    const { blocks } = createParser([
+      photo('p1', 0),
+      photo('p2', 0),
+      photo('p3', 1),
+      photo('p4', 60_000)
+    ])
+    expect(blocks.value.map(block => block.type)).toEqual(['imageGroup', 'image'])
+    expect(blocks.value[0].images.map(item => item.msgId)).toEqual(['p1', 'p2', 'p3'])
   })
 })

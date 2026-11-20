@@ -1,5 +1,10 @@
 import { BEIJING_TIME_ZONE, TIME_ZONE_MODE_DEVICE } from '../utils/beijingTime'
 import {
+  APPEARANCE_MODE_MANUAL,
+  DEFAULT_DARK_SCHEDULE_END,
+  DEFAULT_DARK_SCHEDULE_START
+} from '../utils/appearance'
+import {
   DEFAULT_CLOUD_SYNC_AUTO_SYNC_POLICY,
   DEFAULT_CLOUD_SYNC_CUSTOM_POLICY
 } from '../composables/cloudSync/policy'
@@ -11,7 +16,10 @@ import { createDefaultWebSearchConfig } from '../utils/webSearchConfig'
 
 export function createDefaultThemeSettings() {
   return {
-    isDark: false
+    isDark: false,
+    appearanceMode: APPEARANCE_MODE_MANUAL,
+    darkScheduleStart: DEFAULT_DARK_SCHEDULE_START,
+    darkScheduleEnd: DEFAULT_DARK_SCHEDULE_END
   }
 }
 
@@ -35,11 +43,14 @@ export function createDefaultGeneralSettings() {
     showNarrations: true,
     showTokenCapsule: true,
     allowAIFavorite: false,
+    allowAIReaction: true,
     allowAITransfer: false,
     allowAIGift: false,
     allowAIVoice: false,
     allowAIEmotionTag: false,
     allowAICall: true,
+    allowAIRecall: true,
+    allowAIFile: false,
     allowAIMockImage: false,
     allowAIMusicRecommend: false,
     allowAIIntelligentUI: false,

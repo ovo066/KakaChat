@@ -1,16 +1,22 @@
 <template>
   <div class="absolute inset-0 flex flex-col overflow-hidden">
-    <!-- 全屏模糊背景 -->
+    <!-- 全屏背景：有自定义背景用背景图，否则头像模糊 -->
     <div class="absolute inset-0 z-0">
-      <img
-        v-if="contact?.avatarType === 'image'"
-        :src="contact?.avatar"
-        class="w-full h-full object-cover scale-[1.15]"
-      >
-      <div v-else class="w-full h-full bg-gradient-to-b from-[#111] via-[#0a0a0a] to-[#000]"></div>
-      <!-- 液态模糊层 -->
-      <div class="absolute inset-0 backdrop-blur-[70px] bg-black/50"></div>
-      <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/50"></div>
+      <template v-if="bgUrl">
+        <img :src="bgUrl" class="w-full h-full object-cover" draggable="false">
+        <div class="absolute inset-0 bg-gradient-to-b from-black/45 via-black/25 to-black/60"></div>
+      </template>
+      <template v-else>
+        <img
+          v-if="contact?.avatarType === 'image'"
+          :src="contact?.avatar"
+          class="w-full h-full object-cover scale-[1.15]"
+        >
+        <div v-else class="w-full h-full bg-gradient-to-b from-[#111] via-[#0a0a0a] to-[#000]"></div>
+        <!-- 液态模糊层 -->
+        <div class="absolute inset-0 backdrop-blur-[70px] bg-black/50"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/50"></div>
+      </template>
     </div>
 
     <!-- 顶部区域 -->
@@ -107,7 +113,8 @@ defineProps({
   contact: { type: Object, default: null },
   callMode: { type: String, default: 'voice' },
   isIncoming: { type: Boolean, default: false },
-  inviteText: { type: String, default: '' }
+  inviteText: { type: String, default: '' },
+  bgUrl: { type: String, default: '' }
 })
 
 defineEmits(['cancel', 'accept'])

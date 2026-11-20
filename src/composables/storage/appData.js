@@ -132,6 +132,13 @@ export function redactSecretsForExport(data) {
     })
   }
 
+  if (Array.isArray(data.providers)) {
+    data.providers = data.providers.map(provider => {
+      if (!provider || typeof provider !== 'object') return provider
+      return { ...provider, key: '' }
+    })
+  }
+
   if (Array.isArray(data.contacts)) {
     data.contacts = data.contacts.map((contact) => {
       const memorySettings = contact?.memorySettings

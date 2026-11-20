@@ -29,6 +29,16 @@ export interface StorageConfigSnapshot {
   [key: string]: unknown
 }
 
+export interface StorageProviderSnapshot {
+  id: string
+  name: string
+  url: string
+  key: string
+  apiFormat: string
+  models: Record<string, unknown>[]
+  [key: string]: unknown
+}
+
 export interface StoragePlannerSnapshot {
   events: Record<string, unknown>[]
   diaryEntries: Record<string, unknown>[]
@@ -59,6 +69,7 @@ export interface StorageAppData {
   version: number
   localUpdatedAt: number
   contacts: Record<string, unknown>[]
+  providers?: StorageProviderSnapshot[]
   configs: StorageConfigSnapshot[]
   activeConfigId: string
   settings: Record<string, unknown>

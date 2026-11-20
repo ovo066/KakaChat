@@ -1,6 +1,6 @@
 <template>
   <StickerPanel
-    v-if="showStickerPanel"
+    v-if="stickerPanelMounted"
     :visible="showStickerPanel"
     :stickers="stickers"
     :sticker-groups="stickerGroups"
@@ -70,7 +70,8 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
+import { useStickerWarmup } from '../composables/useStickerWarmup'
 import {
   StickerBatchModal,
   StickerEditorModal,
@@ -80,7 +81,7 @@ import {
   StickerPanel
 } from '../chatAsyncComponents'
 
-defineProps({
+const props = defineProps({
   showStickerPanel: { type: Boolean, default: false },
   showStickerManager: { type: Boolean, default: false },
   stickers: { type: Array, default: () => [] },
@@ -125,4 +126,15 @@ defineEmits([
 ])
 
 const stickerLocalInput = ref(null)
+// 面板第一次打开后常驻（v-show），再次打开时贴纸图已解码好，不用重新加载
+const stickerPanelMounted = ref(false)
+watch(() => props.showStickerPanel, (visible) => {
+  if (visible) stickerPanelMounted.value = true
+}, { immediate: true })
+
+useStickerWarmup({
+  getStickers: () => props.stickers,
+  getStickerGroups: () => props.stickerGroups,
+  loadPanel: () => import('./sticker/StickerPanel.vue')
+})
 </script>

@@ -51,7 +51,12 @@ export function buildSnapshotSettings(store) {
 }
 
 export function applySettingsToStore(settings, store) {
-  store.configs = settings.configs
+  // 有供应商列表时以它为准；只有旧版扁平 configs 时由 configs 写入口迁移
+  if (Array.isArray(settings.providers) && settings.providers.length > 0) {
+    store.providers = settings.providers
+  } else {
+    store.configs = settings.configs
+  }
   store.activeConfigId = settings.activeConfigId
 
   SETTINGS_SNAPSHOT_FIELD_KEYS.forEach((key) => {
@@ -228,6 +233,7 @@ export const STORAGE_SNAPSHOT_MODULES = [
       const { store, externalized } = context
       return {
         contacts: externalized.contacts,
+        providers: store.providers,
         configs: store.configs,
         activeConfigId: store.activeConfigId,
         settings: buildSnapshotSettings(store),
@@ -355,6 +361,7 @@ export const STORAGE_APPLY_MODULES = [
       const { store } = deps
 
       applySettingsToStore({
+        providers: data.providers,
         configs: data.configs,
         activeConfigId: data.activeConfigId,
         values: data.settings

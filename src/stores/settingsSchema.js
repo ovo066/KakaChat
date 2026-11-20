@@ -19,6 +19,12 @@ import {
 } from '../composables/cloudSync/policy'
 import { normalizeSTTProvider } from '../utils/sttProviders'
 import { normalizeSoundConfig } from '../utils/soundEffects'
+import {
+  DEFAULT_DARK_SCHEDULE_END,
+  DEFAULT_DARK_SCHEDULE_START,
+  normalizeAppearanceMode,
+  normalizeClockTime
+} from '../utils/appearance'
 
 const DEFAULT_SNAPSHOT_SETTINGS = createDefaultSettingsSnapshot()
 
@@ -54,6 +60,9 @@ export const STORAGE_SETTINGS_PROXY_FIELDS = Object.freeze([
 
 export const SETTINGS_SNAPSHOT_FIELD_DEFINITIONS = Object.freeze([
   { key: 'isDark', normalize: (value) => !!value },
+  { key: 'appearanceMode', normalize: (value) => normalizeAppearanceMode(value) },
+  { key: 'darkScheduleStart', normalize: (value) => normalizeClockTime(value, DEFAULT_DARK_SCHEDULE_START) },
+  { key: 'darkScheduleEnd', normalize: (value) => normalizeClockTime(value, DEFAULT_DARK_SCHEDULE_END) },
   { key: 'showChatAvatars', normalize: (value) => !!value },
   { key: 'showChatTimestamps', normalize: (value) => value !== false },
   { key: 'sendTimestampsToAI', normalize: (value) => !!value },
@@ -64,11 +73,14 @@ export const SETTINGS_SNAPSHOT_FIELD_DEFINITIONS = Object.freeze([
   { key: 'showNarrations', normalize: (value) => value !== false },
   { key: 'showTokenCapsule', normalize: (value) => value !== false },
   { key: 'allowAIFavorite', normalize: (value) => !!value },
+  { key: 'allowAIReaction', normalize: (value) => value !== false },
   { key: 'allowAITransfer', normalize: (value) => !!value },
   { key: 'allowAIGift', normalize: (value) => !!value },
   { key: 'allowAIVoice', normalize: (value) => !!value },
   { key: 'allowAIEmotionTag', normalize: (value) => !!value },
   { key: 'allowAICall', normalize: (value) => value !== false },
+  { key: 'allowAIRecall', normalize: (value) => value !== false },
+  { key: 'allowAIFile', normalize: (value) => !!value },
   { key: 'allowAIMockImage', normalize: (value) => !!value },
   { key: 'allowAIMusicRecommend', normalize: (value) => !!value },
   { key: 'allowAIIntelligentUI', normalize: (value) => !!value },

@@ -71,6 +71,12 @@ export function buildCompactBackupSnapshot(snapshot, options = {}) {
             return row
           })
         }
+        if (Array.isArray(next.chatThreads)) {
+          next.chatThreads = next.chatThreads.map(thread => ({
+            ...thread,
+            msgs: Array.isArray(thread?.msgs) ? thread.msgs.slice(-msgLimit) : []
+          }))
+        }
         if (Array.isArray(next.offlineMsgs)) next.offlineMsgs = next.offlineMsgs.slice(-msgLimit)
         if (Array.isArray(next.offlineSessions)) next.offlineSessions = []
         if (Array.isArray(next.offlineSnapshots)) next.offlineSnapshots = []
@@ -86,6 +92,7 @@ export function buildCompactBackupSnapshot(snapshot, options = {}) {
       omittedKeys: [...COMPACT_BACKUP_OMITTED_KEYS]
     },
     contacts,
+    providers: Array.isArray(snapshot?.providers) ? snapshot.providers : [],
     configs: Array.isArray(snapshot?.configs) ? snapshot.configs : [],
     activeConfigId: snapshot?.activeConfigId || null,
     settings: snapshot?.settings || {},

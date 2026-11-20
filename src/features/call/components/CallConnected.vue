@@ -123,14 +123,20 @@
 
     <!-- ==================== 语音模式（无 PiP） ==================== -->
     <template v-else>
-      <!-- 背景 -->
+      <!-- 背景：有自定义背景用背景图（压暗保证文字可读），否则头像模糊 -->
       <div class="absolute inset-0 z-0">
-        <img
-          v-if="contact?.avatarType === 'image'"
-          :src="contact?.avatar"
-          class="w-full h-full object-cover scale-125 opacity-25"
-        >
-        <div class="absolute inset-0 backdrop-blur-[80px] bg-gradient-to-b from-[#0a0a0a]/90 via-[#111]/85 to-black/95"></div>
+        <template v-if="voiceBgUrl">
+          <img :src="voiceBgUrl" class="w-full h-full object-cover" draggable="false">
+          <div class="absolute inset-0 bg-gradient-to-b from-black/50 via-black/30 to-black/75"></div>
+        </template>
+        <template v-else>
+          <img
+            v-if="contact?.avatarType === 'image'"
+            :src="contact?.avatar"
+            class="w-full h-full object-cover scale-125 opacity-25"
+          >
+          <div class="absolute inset-0 backdrop-blur-[80px] bg-gradient-to-b from-[#0a0a0a]/90 via-[#111]/85 to-black/95"></div>
+        </template>
       </div>
 
       <!-- 中心内容 -->
@@ -238,6 +244,7 @@ const props = defineProps({
   spriteUrl: { type: String, default: '' },
   bgUrl: { type: String, default: '' },
   characterImage: { type: String, default: '' },
+  voiceBgUrl: { type: String, default: '' },
   emotion: { type: String, default: 'normal' },
   aiSpeaking: { type: Boolean, default: false },
   duration: { type: String, default: '0:00' },

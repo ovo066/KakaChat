@@ -5,6 +5,8 @@ import {
 } from '../../../../data/gifts'
 import { estimateVoiceDuration, generateWaveform } from '../../../../utils/voiceWaveform'
 import { hasSmartUIMarkup, splitSmartUISegments, stripArchivedSmartUI } from '../../smartUI/markup'
+import { formatFileBlockToken, hasFileMarkup, splitFileSegments } from '../../files/fileMessages'
+import { stripReactionTokens } from '../reactionTokens'
 
 export { estimateVoiceDuration, generateWaveform }
 
@@ -88,6 +90,11 @@ export function formatMeetToken(location, time, note) {
   return `(meet:${l})`
 }
 
+export function formatRecallToken(text) {
+  const t = String(text ?? '').trim()
+  return `(recall:${t})`
+}
+
 export function formatMusicToken(title, artist, url = '', cover = '') {
   const t = String(title ?? '').trim()
   const a = String(artist ?? '').trim()
@@ -137,8 +144,8 @@ const SPECIAL_TOKEN_BRACKETS = {
   '【': '】'
 }
 
-const SPECIAL_TOKEN_TYPE_REGEX = /^(?:stickers?|sticker|表情包|贴纸|transfer|转账|gift|礼物|voice|语音|call|通话|camera|相机|mockimage|mock|模拟图片|music|音乐|meet|见面|线下见面)$/i
-const SPECIAL_TOKEN_PREFIX_REGEX = /^\s*(?:stickers?|sticker|表情包|贴纸|transfer|转账|gift|礼物|voice|语音|call|通话|camera|相机|mockimage|mock|模拟图片|music|音乐|meet|见面|线下见面)\s*[:：]/i
+const SPECIAL_TOKEN_TYPE_REGEX = /^(?:stickers?|sticker|表情包|贴纸|transfer|转账|gift|礼物|voice|语音|call|通话|camera|相机|mockimage|mock|模拟图片|music|音乐|meet|见面|线下见面|recall|unsend|撤回)$/i
+const SPECIAL_TOKEN_PREFIX_REGEX = /^\s*(?:stickers?|sticker|表情包|贴纸|transfer|转账|gift|礼物|voice|语音|call|通话|camera|相机|mockimage|mock|模拟图片|music|音乐|meet|见面|线下见面|recall|unsend|撤回)\s*[:：]/i
 const LINE_BREAK_REGEX = /\r\n?|\u0085|\u2028|\u2029/g
 
 function normalizeLineBreaks(text) {
@@ -288,6 +295,12 @@ function parseSpecialToken(token, fallbackEmotion = 'normal') {
     return title ? { type: 'music', title, artist, url, cover } : null
   }
 
+  if (/^(?:recall|unsend|撤回)$/i.test(kind)) {
+    // 发出后又撤回的消息：界面只显示"撤回了一条消息"，原文可点开查看
+    const text = stripEmotionTags(payload, fallbackEmotion).text
+    return text ? { type: 'recall', content: text } : null
+  }
+
   if (/^(?:meet|见面|线下见面)$/i.test(kind)) {
     const segments = splitTokenSegments(payload)
     const location = decodeSpecialTokenValue(segments[0] || '')
@@ -334,6 +347,10 @@ export function rebuildMessageContent(parts) {
       segments.push(formatMusicToken(part.title, part.artist, part.url, part.cover))
     } else if (part.type === 'meet') {
       segments.push(formatMeetToken(part.location, part.time, part.note))
+    } else if (part.type === 'recall') {
+      segments.push(formatRecallToken(part.content))
+    } else if (part.type === 'file') {
+      segments.push(formatFileBlockToken(part.name, part.content))
     } else {
       segments.push(part.content)
     }
@@ -343,6 +360,20 @@ export function rebuildMessageContent(parts) {
 
 export function parseMessageContent(content, allowStickersOrOptions = true) {
   const normalizedContent = stripArchivedSmartUI(normalizeLineBreaks(content))
+
+  // <file> 文件块：整体切出（内部可能含任意字符），优先于 <ui> 与逐行解析
+  const fileOpts = (allowStickersOrOptions && typeof allowStickersOrOptions === 'object') ? allowStickersOrOptions : null
+  if ((!fileOpts || fileOpts.allowFile !== false) && hasFileMarkup(normalizedContent)) {
+    const fileParts = []
+    for (const segment of splitFileSegments(normalizedContent)) {
+      if (segment.type === 'file') {
+        fileParts.push({ type: 'file', name: segment.name, content: segment.content, complete: segment.complete })
+      } else if (segment.content.trim()) {
+        fileParts.push(...parseMessageContent(segment.content, allowStickersOrOptions))
+      }
+    }
+    return fileParts
+  }
 
   // <ui> 智能界面块是可跨行的整体，先于逐行/旁白解析切出来，保证各处 partIndex 一致
   if (hasSmartUIMarkup(normalizedContent)) {
@@ -357,6 +388,8 @@ export function parseMessageContent(content, allowStickersOrOptions = true) {
     return uiParts
   }
 
+  // AI 的表情回应 token 不是正文：流式输出阶段也不让它出现在气泡里
+  const plainContent = stripReactionTokens(normalizedContent)
   const parts = []
   const regex = /\*([^*\n]+)\*/g
 
@@ -371,8 +404,9 @@ export function parseMessageContent(content, allowStickersOrOptions = true) {
   const allowMockImage = opts.allowMockImage !== false
   const allowMusic = opts.allowMusic !== false
   const allowMeet = opts.allowMeet !== false
+  const allowRecall = opts.allowRecall !== false
   const allowNarration = opts.allowNarration !== false
-  const anySpecialAllowed = allowStickers || allowTransfer || allowGift || allowVoice || allowCall || allowMockImage || allowMusic || allowMeet
+  const anySpecialAllowed = allowStickers || allowTransfer || allowGift || allowVoice || allowCall || allowMockImage || allowMusic || allowMeet || allowRecall
 
   const pushNormalPart = (target, text, fallbackEmotion = 'normal') => {
     const parsed = stripEmotionTags(text, fallbackEmotion)
@@ -391,7 +425,8 @@ export function parseMessageContent(content, allowStickersOrOptions = true) {
         (parsed.type === 'call' && allowCall) ||
         (parsed.type === 'mockImage' && allowMockImage) ||
         (parsed.type === 'music' && allowMusic) ||
-        (parsed.type === 'meet' && allowMeet)
+        (parsed.type === 'meet' && allowMeet) ||
+        (parsed.type === 'recall' && allowRecall)
       )
       if (ok) {
         target.push(parsed)
@@ -449,9 +484,9 @@ export function parseMessageContent(content, allowStickersOrOptions = true) {
   if (allowNarration) {
     let lastIndex = 0
     let match
-    while ((match = regex.exec(normalizedContent)) !== null) {
+    while ((match = regex.exec(plainContent)) !== null) {
       if (match.index > lastIndex) {
-        const text = normalizedContent.substring(lastIndex, match.index).trim()
+        const text = plainContent.substring(lastIndex, match.index).trim()
         if (text) {
           pushTextParts(text)
         }
@@ -460,18 +495,18 @@ export function parseMessageContent(content, allowStickersOrOptions = true) {
       lastIndex = regex.lastIndex
     }
 
-    if (lastIndex < normalizedContent.length) {
-      const text = normalizedContent.substring(lastIndex).trim()
+    if (lastIndex < plainContent.length) {
+      const text = plainContent.substring(lastIndex).trim()
       if (text) {
         pushTextParts(text)
       }
     }
   } else {
-    pushTextParts(normalizedContent)
+    pushTextParts(plainContent)
   }
 
   if (parts.length === 0) {
-    const text = normalizedContent.trim()
+    const text = plainContent.trim()
     if (text) {
       const fallback = []
       const lines = text.split(/\n+/).map(l => l.trim()).filter(l => l)

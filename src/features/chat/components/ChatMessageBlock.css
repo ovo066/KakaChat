@@ -13,3 +13,135 @@
 .offline-card-delete-btn:active {
   opacity: 0.7;
 }
+
+/* ── File message card (public theme API: .chat-file-*) ── */
+.chat-file-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 240px;
+  max-width: 100%;
+  padding: 10px 12px;
+  border-radius: 16px;
+  background: var(--bubble-ai-bg, #E9E9EB);
+  color: var(--bubble-ai-text, var(--text-primary));
+  cursor: pointer;
+  user-select: none;
+}
+.chat-file-card-user {
+  background: var(--bubble-user-bg, var(--primary-color));
+  color: var(--bubble-user-text, #fff);
+}
+.chat-file-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--primary-color);
+}
+.chat-file-card-user .chat-file-icon { background: rgba(255, 255, 255, 0.25); color: inherit; }
+.chat-file-info { flex: 1; min-width: 0; }
+.chat-file-name {
+  font-size: 15px;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-file-meta { font-size: 12px; opacity: 0.65; margin-top: 2px; }
+.chat-file-download {
+  flex-shrink: 0;
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  color: inherit;
+  opacity: 0.75;
+}
+.chat-file-download:active { background: rgba(0, 0, 0, 0.08); }
+.chat-file-preview-mask {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(0, 0, 0, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 14px;
+}
+.chat-file-preview {
+  width: 100%;
+  max-width: 560px;
+  max-height: 100%;
+  display: flex;
+  flex-direction: column;
+  border-radius: 18px;
+  overflow: hidden;
+  background: var(--card-bg, #fff);
+  color: var(--text-primary);
+}
+.chat-file-preview-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 10px 10px 16px;
+  border-bottom: 1px solid var(--border-color);
+}
+.chat-file-preview-title {
+  flex: 1;
+  min-width: 0;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.chat-file-preview-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 18px;
+  color: var(--text-secondary);
+}
+.chat-file-preview-btn:active { background: rgba(0, 0, 0, 0.06); }
+.chat-file-preview-body {
+  flex: 1;
+  overflow: auto;
+  margin: 0;
+  padding: 14px 16px;
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-word;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+/* ── 贴纸加载占位：缓存命中时一闪而过，不显示骨架；慢网才淡入灰底 ── */
+.chat-sticker-loading {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  border-radius: 20px;
+  animation: chat-sticker-skeleton 1.4s ease-in-out 0.18s infinite;
+}
+.chat-sticker-loading .chat-sticker-img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+}
+.chat-sticker-img {
+  transition: opacity 0.22s ease;
+}
+@keyframes chat-sticker-skeleton {
+  0%, 100% { background-color: rgba(120, 120, 128, 0.10); }
+  50% { background-color: rgba(120, 120, 128, 0.18); }
+}

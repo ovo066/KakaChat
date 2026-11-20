@@ -7,7 +7,7 @@
           <span class="text-[17px] text-[var(--text-primary)]">外观与显示</span>
         </div>
         <div class="flex items-center gap-1">
-          <span class="text-[15px] text-[var(--text-secondary)]">{{ store.isDark ? '深色' : '浅色' }}</span>
+          <span class="text-[15px] text-[var(--text-secondary)]">{{ appearanceLabel }}</span>
           <i class="ph ph-caret-right text-[var(--text-secondary)]"></i>
         </div>
       </button>
@@ -89,11 +89,11 @@
     <div class="bg-[var(--card-bg)] rounded-[10px] overflow-hidden">
       <button class="w-full px-4 py-3 flex items-center justify-between border-b border-[var(--border-color)]" @click="goTo('api')">
         <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-lg bg-[#8E8E93] flex items-center justify-center text-white"><i class="ph ph-gear text-[18px]"></i></div>
-          <span class="text-[17px] text-[var(--text-primary)]">API 配置</span>
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-[#7D7AFF] to-[#5E5CE6] flex items-center justify-center text-white"><i class="ph ph-cube text-[18px]"></i></div>
+          <span class="text-[17px] text-[var(--text-primary)]">模型与 API</span>
         </div>
-        <div class="flex items-center gap-1">
-          <span class="text-[15px] text-[var(--text-secondary)]">{{ currentConfigName }}</span>
+        <div class="flex items-center gap-1 min-w-0 pl-3">
+          <span class="text-[15px] text-[var(--text-secondary)] truncate max-w-[150px]">{{ currentConfigName }}</span>
           <i class="ph ph-caret-right text-[var(--text-secondary)]"></i>
         </div>
       </button>
@@ -135,6 +135,7 @@ import { useAccessControlStore } from '../../stores/accessControl'
 import { useConfigsStore } from '../../stores/configs'
 import { useSettingsStore } from '../../stores/settings'
 import { useCloudSyncStore } from '../../stores/cloudSync'
+import { isAutoAppearanceMode } from '../../utils/appearance'
 
 const emit = defineEmits(['navigate'])
 
@@ -144,9 +145,15 @@ const configsStore = useConfigsStore()
 const store = useSettingsStore()
 const syncStore = useCloudSyncStore()
 
+const appearanceLabel = computed(() => {
+  if (isAutoAppearanceMode(store.appearanceMode)) return '自动'
+  return store.isDark ? '深色' : '浅色'
+})
+
 const aiFeatureCount = computed(() => {
   let count = 0
   if (store.allowAIFavorite) count++
+  if (store.allowAIReaction) count++
   if (store.allowAITransfer) count++
   if (store.allowAIGift) count++
   if (store.allowAIVoice) count++
@@ -156,6 +163,8 @@ const aiFeatureCount = computed(() => {
   if (store.allowAIEmotionTag) count++
   if (store.allowAIMockImage) count++
   if (store.allowAICall) count++
+  if (store.allowAIRecall) count++
+  if (store.allowAIFile) count++
   if (store.allowAIMusicRecommend) count++
   if (store.allowAIIntelligentUI) count++
   if (store.enableWeatherContext) count++
@@ -186,8 +195,7 @@ const soundSummary = computed(() => {
 })
 
 const currentConfigName = computed(() => {
-  const c = configsStore.configs.find(x => x.id === configsStore.activeConfigId)
-  return c?.name || '未选择'
+  return configsStore.getModelConfig(configsStore.activeConfigId)?.modelLabel || '未设置'
 })
 
 const cloudSyncSummary = computed(() => {

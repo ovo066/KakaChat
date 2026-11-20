@@ -130,7 +130,7 @@
           <div class="flex-1 min-w-0">
             <div class="text-[17px] text-black dark:text-white truncate">{{ contact.name }}</div>
             <div class="text-[13px] text-[#8E8E93] truncate">
-              {{ contact.configId ? getConfigName(contact.configId) : '默认API' }}
+              {{ contact.configId ? getConfigName(contact.configId) : '默认模型' }}
               <span v-if="contact.prompt"> · {{ contact.prompt.slice(0, 20) }}...</span>
             </div>
             <div class="text-[12px] text-[#8E8E93] truncate">贴纸：{{ contactStickerLabel(contact) }}</div>
@@ -145,30 +145,17 @@
         </div>
       </div>
 
-      <!-- 单API模式的全局配置 -->
+      <!-- 单API模式：一个模型扮演所有成员 -->
       <div v-if="form.groupMode === 'single'" class="w-full bg-white dark:bg-[#2c2c2e] rounded-[10px] overflow-hidden">
         <div class="px-4 py-3 border-b border-[#E5E5EA] dark:border-gray-700">
-          <span class="text-[13px] text-[#8E8E93] uppercase">使用的API配置</span>
+          <span class="text-[13px] text-[#8E8E93] uppercase">群聊使用的模型</span>
         </div>
-        <div
-          v-for="cfg in configsStore.configs"
-          :key="cfg.id"
-          class="px-4 py-3 flex justify-between items-center cursor-pointer active:bg-gray-100 dark:active:bg-gray-800 border-b border-[#E5E5EA] dark:border-gray-700 last:border-b-0"
-          @click="form.configId = cfg.id"
-        >
-          <span class="text-[17px] text-black dark:text-white">{{ cfg.name }}</span>
-          <div
-            class="w-[24px] h-[24px] rounded-full border-2 flex items-center justify-center"
-            :class="form.configId === cfg.id ? 'bg-[#007AFF] border-[#007AFF]' : 'border-[#C6C6C8]'"
-          >
-            <i v-if="form.configId === cfg.id" class="ph-bold ph-check text-white text-sm"></i>
-          </div>
-        </div>
+        <ModelSelectField v-model="form.configId" title="群聊使用的模型" :follow-hint="defaultModelHint" />
       </div>
 
       <!-- 多API模式提示 -->
       <div v-if="form.groupMode === 'multi'" class="text-[13px] text-[#8E8E93] text-center px-4">
-        多API模式下，每个成员将使用其联系人绑定的API配置（如有），否则使用默认配置
+        多API模式下，每个成员使用其角色资料里选的模型，没选则用默认模型
       </div>
 
       <div class="w-full bg-white dark:bg-[#2c2c2e] rounded-[10px] overflow-hidden">
@@ -427,6 +414,7 @@ import { compressImage } from '../../composables/useImage'
 import { normalizeImageUrlInput } from '../../utils/mediaUrl'
 import { describeMcpServerSelection, listAvailableMcpServers, normalizeMcpServerIds } from '../../utils/mcpServers'
 import { describeStickerGroups } from '../../utils/stickerGroups'
+import ModelSelectField from '../common/ModelSelectField.vue'
 import IosModal from '../common/IosModal.vue'
 
 const props = defineProps({
@@ -442,6 +430,7 @@ const emit = defineEmits(['close', 'saved', 'deleted'])
 
 const contactsStore = useContactsStore()
 const configsStore = useConfigsStore()
+const defaultModelHint = computed(() => configsStore.getConfig?.id ? `当前：${configsStore.getConfig.name}` : '尚未设置默认模型')
 const lorebookStore = useLorebookStore()
 const personasStore = usePersonasStore()
 const settingsStore = useSettingsStore()
@@ -551,8 +540,8 @@ function isContactSelected(contactId) {
 }
 
 function getConfigName(configId) {
-  const cfg = configsStore.configs.find(c => c.id === configId)
-  return cfg ? cfg.name : '默认API'
+  const cfg = configsStore.getModelConfig(configId)
+  return cfg ? cfg.name : '默认模型'
 }
 
 function toggleContact(contact) {

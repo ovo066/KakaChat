@@ -33,10 +33,11 @@ export function removeMessageIfVisiblyEmpty(chat, msgId) {
   }
 }
 
-export function markPendingUserMessagesAsRead(chat, reason = 'assistant_reply') {
+export function markPendingUserMessagesAsRead(chat, reason = 'assistant_reply', options = {}) {
   if (!chat || !Array.isArray(chat.msgs)) return 0
   const now = Date.now()
   let changed = 0
+  let lastChanged = null
   for (const msg of chat.msgs) {
     if (!msg || msg.role !== 'user') continue
     if (msg.hideInChat || msg.hidden) continue
@@ -46,7 +47,14 @@ export function markPendingUserMessagesAsRead(chat, reason = 'assistant_reply') 
     msg.readStatus = 'read'
     msg.readAt = now
     if (reason) msg.readReason = reason
+    lastChanged = msg
     changed += 1
+  }
+  // 已读不回：记在这批消息的最后一条上，后续请求会告知模型
+  if (reason === 'read_only' && lastChanged) {
+    lastChanged.readOnlyAt = now
+    const readOnlyReason = String(options.readOnlyReason || '').trim()
+    if (readOnlyReason) lastChanged.readOnlyReason = readOnlyReason
   }
   if (changed > 0) {
     useSoundEffects().playEvent('readReceipt')

@@ -60,6 +60,9 @@ export function buildMessagePartSearchText(part) {
   if (part.type === 'meet') {
     return normalizeSearchText(`邀约 ${part.location || ''} ${part.time || ''} ${part.note || ''}`)
   }
+  if (part.type === 'recall') {
+    return normalizeSearchText(`撤回 ${part.content || ''}`)
+  }
 
   return normalizeSearchText(part.content)
 }
@@ -78,6 +81,7 @@ export function buildMessagePartSnippet(part) {
   if (part.type === 'call') return '[通话]'
   if (part.type === 'music') return '[音乐]'
   if (part.type === 'mockImage') return '[相机]'
+  if (part.type === 'recall') return '[已撤回]'
 
   return normalizeBlockText(part.content)
 }
@@ -116,6 +120,10 @@ export function buildMessagePartDetailText(part) {
   if (part.type === 'mockImage') {
     const text = normalizeBlockText(part.text)
     return text ? `相机：${text}` : '[相机]'
+  }
+  if (part.type === 'recall') {
+    const text = normalizeBlockText(part.content)
+    return text ? `已撤回：${text}` : '[已撤回]'
   }
 
   return normalizeBlockText(part.content)

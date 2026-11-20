@@ -7,6 +7,7 @@ export async function applyReadOnlySuppression(options = {}) {
     settingsStore,
     showToast,
     reason,
+    recordReason = reason,
     delayMs = 450 + Math.random() * 500
   } = options
 
@@ -14,7 +15,7 @@ export async function applyReadOnlySuppression(options = {}) {
   await new Promise(resolve => setTimeout(resolve, Math.max(0, delayMs)))
   chatStore.ui.isTyping = false
 
-  markPendingUserMessagesAsRead(activeChat, 'read_only')
+  markPendingUserMessagesAsRead(activeChat, 'read_only', { readOnlyReason: recordReason })
 
   if (settingsStore?.livenessConfig?.showReadOnlyReasonToast) {
     const shortReason = String(reason || '').trim()

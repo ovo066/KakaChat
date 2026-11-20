@@ -17,7 +17,8 @@ export function parseOptionalMaxTokens(value) {
 
 export function normalizeReasoningEffort(value) {
   const effort = String(value || '').trim().toLowerCase()
-  if (!effort || effort === 'default' || effort === 'off' || effort === 'none') return ''
+  // 'auto' 表示让模型自己决定，不发送参数
+  if (!effort || effort === 'auto' || effort === 'default' || effort === 'off' || effort === 'none') return ''
   if (effort === 'minimal' || effort === 'low' || effort === 'medium' || effort === 'high') return effort
   return ''
 }

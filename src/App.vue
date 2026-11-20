@@ -75,6 +75,7 @@ import { useBootstrapStore } from './stores/bootstrap'
 import { useContactsStore } from './stores/contacts'
 import { useLorebookStore } from './stores/lorebook'
 import { useMusicStore } from './stores/music'
+import { useSettingsStore } from './stores/settings'
 import { useStorage } from './composables/useStorage'
 import { useAccessAnnouncement } from './composables/useAccessAnnouncement'
 import { useConfirm } from './composables/useConfirm'
@@ -99,6 +100,7 @@ const bootstrapStore = useBootstrapStore()
 const contactsStore = useContactsStore()
 const lorebookStore = useLorebookStore()
 const musicStore = useMusicStore()
+const settingsStore = useSettingsStore()
 const { requestPersistence } = useStorage()
 const {
   announcement,
@@ -134,8 +136,10 @@ const BOOT_OVERLAY_DELAY_MS = 220
 let bootOverlayTimer = null
 
 // Set status bar color based on current route.
+// 桌面是纸面底，只有用壁纸当纸时才用白字。
 const statusBarColor = computed(() => {
-  return route.path === '/' ? 'white' : 'dark'
+  if (route.path !== '/') return 'dark'
+  return settingsStore.theme?.homePaper === 'photo' && settingsStore.wallpaper ? 'white' : 'dark'
 })
 const announcementModalVisible = computed(() => announcementVisible.value && !lockScreenVisible.value)
 

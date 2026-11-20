@@ -1,10 +1,5 @@
 export const appRoutes = [
   {
-    path: '/',
-    name: 'home',
-    component: () => import('../../views/HomeView.vue')
-  },
-  {
     path: '/settings',
     name: 'settings',
     component: () => import('../../views/SettingsView.vue')

@@ -374,7 +374,7 @@ const props = defineProps({
   allowSnoop: { type: Boolean, default: true }
 })
 
-const emit = defineEmits(['update:modelValue', 'send', 'sendSticker', 'openPhoto', 'openCamera', 'openSticker', 'openMemory', 'openTransfer', 'openGift', 'openVoice', 'openReader', 'openMusic', 'openSearch', 'openMeet', 'openSnoop'])
+const emit = defineEmits(['update:modelValue', 'send', 'sendSticker', 'openPhoto', 'openFile', 'openCamera', 'openSticker', 'openMemory', 'openTransfer', 'openGift', 'openVoice', 'openReader', 'openMusic', 'openSearch', 'openMeet', 'openSnoop', 'openThreads'])
 
 const contactsStore = useContactsStore()
 const chatStore = useChatStore()

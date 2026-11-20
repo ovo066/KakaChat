@@ -31,20 +31,36 @@ function summarizeSnapshotForSafetyGuard(snapshot, messagePartitions) {
   const contactPool = meaningfulContacts.length > 0 ? meaningfulContacts : contacts
   let messageBearingContactCount = 0
   let totalMessages = 0
+  // 开新对话会把旧消息挪进 chatThreads 存档，存档也算作该联系人的消息，避免被误判为数据缩水
+  const archivedCountById = new Map()
+  contacts.forEach((contact) => {
+    if (!Array.isArray(contact?.chatThreads)) return
+    const archived = contact.chatThreads.reduce((sum, thread) => (
+      sum + (Array.isArray(thread?.msgs) ? thread.msgs.length : 0)
+    ), 0)
+    if (archived > 0) archivedCountById.set(String(contact.id || ''), archived)
+  })
 
   if (messagePartitions instanceof Map && messagePartitions.size > 0) {
-    messagePartitions.forEach((msgs) => {
-      const count = Array.isArray(msgs) ? msgs.length : 0
+    const countedIds = new Set()
+    messagePartitions.forEach((msgs, contactId) => {
+      countedIds.add(String(contactId || ''))
+      const count = (Array.isArray(msgs) ? msgs.length : 0) + (archivedCountById.get(String(contactId || '')) || 0)
       if (count > 0) {
         messageBearingContactCount += 1
         totalMessages += count
       }
     })
+    archivedCountById.forEach((count, contactId) => {
+      if (countedIds.has(contactId)) return
+      messageBearingContactCount += 1
+      totalMessages += count
+    })
   } else {
     contactPool.forEach((contact) => {
-      const count = Array.isArray(contact?.msgs)
+      const count = (Array.isArray(contact?.msgs)
         ? contact.msgs.length
-        : Math.max(0, Number(contact?.msgCount || 0) || 0)
+        : Math.max(0, Number(contact?.msgCount || 0) || 0)) + (archivedCountById.get(String(contact?.id || '')) || 0)
       if (count > 0) {
         messageBearingContactCount += 1
         totalMessages += count

@@ -29,7 +29,7 @@ import {
 import { normalizeCloudSyncConfig } from '../../utils/cloudSyncConfig'
 import { inferSTTProviderFromUrl, normalizeSTTProvider } from '../../utils/sttProviders'
 import { normalizeImageGenProvider } from '../imageGen/providers'
-import { normalizeProviderConfig } from '../api/providerFormats'
+import { flattenProviders, migrateConfigsToProviders, normalizeProviders } from '../../stores/configsModel'
 import { ensureLorebookDefaults } from './lorebookDefaults'
 
 /**
@@ -116,18 +116,20 @@ function createDefaultHomeState() {
   }
 }
 
-function normalizeOptionalNumber(value, min, max, integer = false) {
-  if (value === null || value === undefined || value === '') return null
-  const numericValue = Number(value)
-  if (!Number.isFinite(numericValue)) return null
-  if (numericValue < min || numericValue > max) return null
-  return integer ? Math.floor(numericValue) : numericValue
-}
-
-function normalizeReasoningEffort(value) {
-  const effort = String(value || '').trim().toLowerCase()
-  if (effort === 'minimal' || effort === 'low' || effort === 'medium' || effort === 'high') return effort
-  return ''
+/**
+ * 供应商列表是新版数据源；没有时（旧数据）从扁平 configs 迁移，地址 + Key 相同的配置合并到同一供应商。
+ * @param {StorageAppData} normalized
+ * @param {AppDataNormalizeContext} context
+ */
+function normalizeStoredProviders(normalized, context) {
+  const sourceProviders = context.source?.providers
+  if (Array.isArray(sourceProviders) && sourceProviders.length > 0) {
+    return normalizeProviders(sourceProviders)
+  }
+  const legacyConfigs = Array.isArray(normalized.configs) && normalized.configs.length > 0
+    ? normalized.configs
+    : [createDefaultConfigSnapshot()]
+  return migrateConfigsToProviders(legacyConfigs)
 }
 
 function normalizeUrlLikeString(value) {
@@ -336,6 +338,7 @@ export const APP_DATA_MODULES = [
         version: 1,
         localUpdatedAt: 0,
         contacts: [],
+        providers: migrateConfigsToProviders([createDefaultConfigSnapshot()]),
         configs: [createDefaultConfigSnapshot()],
         activeConfigId: 'default',
         settings: createDefaultSettingsSnapshot(),
@@ -344,29 +347,13 @@ export const APP_DATA_MODULES = [
       }
     },
     normalize(normalized, context) {
-      const defaultConfig = createDefaultConfigSnapshot()
       if (!Array.isArray(normalized.contacts)) normalized.contacts = []
-      if (!Array.isArray(normalized.configs) || normalized.configs.length === 0) {
-        normalized.configs = [createDefaultConfigSnapshot()]
-      }
-      normalized.configs = normalized.configs.map((cfg, index) => {
-        const next = (cfg && typeof cfg === 'object' && !Array.isArray(cfg)) ? { ...cfg } : {}
-        const id = String(next.id || (index === 0 ? defaultConfig.id : `cfg_${Date.now()}_${index}`))
-        return normalizeProviderConfig({
-          ...next,
-          id,
-          name: typeof next.name === 'string' ? next.name : (index === 0 ? defaultConfig.name : ''),
-          url: typeof next.url === 'string' ? next.url : defaultConfig.url,
-          key: typeof next.key === 'string' ? next.key : '',
-          model: typeof next.model === 'string' ? next.model : defaultConfig.model,
-          temperature: normalizeOptionalNumber(next.temperature, 0, 2),
-          maxTokens: normalizeOptionalNumber(next.maxTokens, 1, 32768, true),
-          reasoningEffort: normalizeReasoningEffort(next.reasoningEffort)
-        })
-      })
+      normalized.providers = normalizeStoredProviders(normalized, context)
+      // 扁平 configs 仍随快照保存，旧版本客户端 / 云端读到的数据保持可用
+      normalized.configs = flattenProviders(normalized.providers)
 
       if (!normalized.activeConfigId || !normalized.configs.find(config => config.id === normalized.activeConfigId)) {
-        normalized.activeConfigId = normalized.configs[0].id
+        normalized.activeConfigId = normalized.configs[0]?.id || ''
       }
 
       const rawNormalizedSettings = (normalized.settings && typeof normalized.settings === 'object' && !Array.isArray(normalized.settings))

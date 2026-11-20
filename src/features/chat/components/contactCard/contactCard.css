@@ -1,0 +1,218 @@
+/* iOS 26 联系人卡片的玻璃分组/列表行；卡片与设置子组件共用，全部挂在 .contact-card 下 */
+
+/* 液态玻璃：上沿高光 + 边缘折射 + 柔投影 */
+.contact-card .cc-glass {
+  position: relative;
+  color: #fff;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.24) 0%, rgba(255, 255, 255, 0.1) 100%);
+  box-shadow:
+    inset 1.5px 1.5px 1px -1px rgba(255, 255, 255, 0.85),
+    inset -1.5px -1.5px 1px -1px rgba(255, 255, 255, 0.45),
+    inset 0 0 0 0.5px rgba(255, 255, 255, 0.3),
+    inset 0 0 18px rgba(255, 255, 255, 0.1),
+    0 8px 24px rgba(0, 0, 0, 0.12);
+  backdrop-filter: blur(16px) saturate(1.6) brightness(1.05);
+  -webkit-backdrop-filter: blur(16px) saturate(1.6) brightness(1.05);
+}
+
+.contact-card button.cc-glass {
+  transition: transform 0.22s cubic-bezier(0.32, 0.72, 0, 1), background-color 0.2s ease;
+}
+
+.contact-card button.cc-glass:active {
+  transform: scale(0.94);
+  background-color: rgba(255, 255, 255, 0.14);
+}
+
+.contact-card .cc-group {
+  border-radius: 26px;
+  overflow: hidden;
+  margin-bottom: 14px;
+}
+
+.contact-card .cc-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.contact-card .cc-group-label {
+  display: block;
+  padding: 14px 20px 2px;
+}
+
+.contact-card .cc-note {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 20px 16px;
+  text-align: left;
+  color: #fff;
+}
+
+.contact-card .cc-note-text {
+  font-size: 15px;
+  line-height: 1.45;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.contact-card .cc-row {
+  position: relative;
+  width: 100%;
+  min-height: 54px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 20px;
+  font-size: 17px;
+  text-align: left;
+  color: #fff;
+}
+
+.contact-card .cc-row + .cc-row::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 20px;
+  right: 0;
+  height: 0.5px;
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.contact-card button.cc-row:active {
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.contact-card .cc-row-title {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.contact-card .cc-row-value {
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.contact-card .cc-row > i {
+  font-size: 15px;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.contact-card .cc-member-avatar {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+}
+
+.contact-card .cc-member-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.contact-card .cc-photos {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding: 0 12px 12px;
+}
+
+.contact-card .cc-photo {
+  aspect-ratio: 1;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.contact-card .cc-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.contact-card .cc-edit-row {
+  width: 100%;
+  height: 54px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 17px;
+  font-weight: 600;
+}
+
+/* 键盘弹起时关掉模糊（与液态玻璃主题一致的性能降级） */
+:root.keyboard-open .contact-card .cc-glass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+
+.contact-card .cc-row-icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 17px;
+  color: #fff;
+  background: var(--icon-bg, rgba(255, 255, 255, 0.22));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
+.contact-card .cc-row > .cc-row-icon {
+  margin-right: 2px;
+}
+
+.contact-card .cc-row-thumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background-size: cover;
+  background-position: center;
+  box-shadow: 0 0 0 0.5px rgba(255, 255, 255, 0.5);
+}
+
+.contact-card .cc-row.is-danger {
+  justify-content: center;
+}
+
+.contact-card .cc-row.is-danger .cc-row-title {
+  flex: none;
+  color: #FFB4AE;
+  font-weight: 600;
+}
+
+.contact-card .cc-row.is-danger .cc-row-value {
+  margin-left: 6px;
+}
+
+.contact-card .cc-note-text.is-empty {
+  color: rgba(255, 255, 255, 0.6);
+}
+
+/* 带图标的行：分隔线从文字处开始 */
+.contact-card .cc-row + .cc-row:has(> .cc-row-icon)::before {
+  left: 62px;
+}

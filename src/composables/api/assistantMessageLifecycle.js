@@ -5,6 +5,7 @@ import { createGiftSnapshot } from '../../data/gifts'
 import { extractQuoteFromText } from '../../utils/messageQuote'
 import {
   applyAssistantInteractionDecisions,
+  applyAssistantReactions,
   ensureInteractiveMessagePending,
   parseMessageContent
 } from '../../features/chat'
@@ -42,6 +43,13 @@ function attachGiftPartSnapshots(message) {
   }
 
   delete message.giftPartSnapshots
+}
+
+function removeChatMessage(activeChat, message) {
+  const messages = activeChat?.msgs
+  if (!Array.isArray(messages) || !message) return
+  const idx = messages.findIndex(item => item === message || (message.id && item?.id === message.id))
+  if (idx >= 0) messages.splice(idx, 1)
 }
 
 function touchChatMessage(activeChat, message) {
@@ -253,6 +261,7 @@ export function finalizeStreamingAssistantReply({
     message,
     makeId: makeMsgId
   })
+  const reactionResult = applyAssistantReactions({ activeChat, message })
   attachGiftPartSnapshots(message)
   if (typeof buildDisplayContent === 'function') {
     message.displayContent = buildDisplayContent(message.content)
@@ -262,6 +271,16 @@ export function finalizeStreamingAssistantReply({
   ensureInteractiveMessagePending(message)
 
   const visibleAfterInteraction = trimText(message?.displayContent != null ? message.displayContent : message?.content)
+  // 只点了个表情回应、没说话：回应已挂在用户消息上，这条空回复直接移除（不进上下文，也不响提示音）
+  if (reactionResult.tokenCount > 0 && interactionResult.resolvedCount === 0 && !visibleAfterInteraction) {
+    removeChatMessage(activeChat, message)
+    return {
+      forumOnly: false,
+      parsedMomentsResult: null,
+      interactionOnly: true,
+      acceptedMeet: false
+    }
+  }
   const interactionOnly = interactionResult.resolvedCount > 0 && !visibleAfterInteraction
   if (interactionOnly) {
     message.hideInChat = true

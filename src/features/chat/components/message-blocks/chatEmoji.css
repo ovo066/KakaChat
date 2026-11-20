@@ -1,0 +1,196 @@
+/* ── 纯 emoji 消息：iMessage 式放大显示 + 动态效果 ── */
+
+.chat-emoji-jumbo {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  margin: 1px 4px 3px;
+  padding: 0 2px;
+  line-height: 1.15;
+  font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", var(--bubble-font, sans-serif);
+  white-space: nowrap;
+  cursor: pointer;
+  -webkit-touch-callout: none;
+  user-select: none;
+}
+
+.chat-emoji-jumbo.is-count-1 { font-size: 56px; }
+.chat-emoji-jumbo.is-count-2 { font-size: 46px; }
+.chat-emoji-jumbo.is-count-3 { font-size: 40px; }
+
+.chat-emoji-jumbo-pop,
+.chat-emoji-jumbo-glyph {
+  display: inline-block;
+  transform-origin: 50% 75%;
+}
+
+.chat-emoji-jumbo-glyph {
+  --emoji-delay: 0s;
+}
+
+/* 新消息：先弹出，再播放对应的动作 */
+.chat-emoji-jumbo-pop.is-entering {
+  animation: emoji-pop-in 0.62s cubic-bezier(0.2, 1.5, 0.35, 1) both;
+}
+
+.chat-emoji-jumbo-pop.is-entering .chat-emoji-jumbo-glyph {
+  --emoji-delay: 0.42s;
+}
+
+.chat-emoji-jumbo-glyph.is-anim-beat { animation: emoji-beat 1.1s ease-in-out var(--emoji-delay) both; }
+.chat-emoji-jumbo-glyph.is-anim-laugh { animation: emoji-laugh 0.9s ease-in-out var(--emoji-delay) both; }
+.chat-emoji-jumbo-glyph.is-anim-wave { animation: emoji-wave 1.1s ease-in-out var(--emoji-delay) both; transform-origin: 72% 88%; }
+.chat-emoji-jumbo-glyph.is-anim-clap { animation: emoji-clap 0.85s ease-in-out var(--emoji-delay) both; }
+.chat-emoji-jumbo-glyph.is-anim-thumb { animation: emoji-thumb 0.9s cubic-bezier(0.3, 1.4, 0.5, 1) var(--emoji-delay) both; }
+.chat-emoji-jumbo-glyph.is-anim-cry { animation: emoji-cry 1.1s ease-in-out var(--emoji-delay) both; }
+.chat-emoji-jumbo-glyph.is-anim-angry { animation: emoji-angry 0.7s linear var(--emoji-delay) both; }
+.chat-emoji-jumbo-glyph.is-anim-shock { animation: emoji-shock 0.8s ease-out var(--emoji-delay) both; }
+.chat-emoji-jumbo-glyph.is-anim-party { animation: emoji-party 1s cubic-bezier(0.3, 0.9, 0.4, 1) var(--emoji-delay) both; }
+.chat-emoji-jumbo-glyph.is-anim-fire { animation: emoji-fire 1s ease-in-out var(--emoji-delay) both; transform-origin: 50% 100%; }
+.chat-emoji-jumbo-glyph.is-anim-sleep { animation: emoji-sleep 1.6s ease-in-out var(--emoji-delay) both; }
+.chat-emoji-jumbo-glyph.is-anim-jelly { animation: emoji-jelly 0.8s ease-in-out var(--emoji-delay) both; transform-origin: 50% 100%; }
+
+/* 点按时飘出的小 emoji；行本身有 content-visibility 裁剪，爆发期间临时放开 */
+.chat-msg-item:has(.chat-emoji-particle) {
+  content-visibility: visible;
+  contain: none;
+  position: relative;
+  z-index: 5;
+}
+
+.chat-emoji-particle {
+  position: absolute;
+  left: 50%;
+  top: 45%;
+  z-index: 2;
+  font-size: 0.48em;
+  pointer-events: none;
+  opacity: 0;
+  animation: emoji-particle 0.95s cubic-bezier(0.15, 0.75, 0.3, 1) forwards;
+}
+
+@keyframes emoji-particle {
+  0% { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
+  12% { opacity: 1; }
+  62% { opacity: 1; }
+  100% {
+    opacity: 0;
+    transform: translate(calc(-50% + var(--dx, 0px)), calc(-50% + var(--dy, -60px))) rotate(var(--rot, 0deg)) scale(var(--scale, 0.8));
+  }
+}
+
+@keyframes emoji-pop-in {
+  0% { opacity: 0; transform: scale(0.2) translateY(30%); }
+  55% { opacity: 1; transform: scale(1.14) translateY(-4%); }
+  78% { transform: scale(0.96); }
+  100% { transform: scale(1); }
+}
+
+@keyframes emoji-beat {
+  0%, 100% { transform: scale(1); }
+  14% { transform: scale(1.22); }
+  28% { transform: scale(1); }
+  42% { transform: scale(1.16); }
+  70% { transform: scale(1); }
+}
+
+@keyframes emoji-laugh {
+  0%, 100% { transform: rotate(0); }
+  15% { transform: rotate(-14deg) scale(1.06); }
+  30% { transform: rotate(12deg) scale(1.06); }
+  45% { transform: rotate(-10deg); }
+  60% { transform: rotate(8deg); }
+  78% { transform: rotate(-4deg); }
+}
+
+@keyframes emoji-wave {
+  0%, 100% { transform: rotate(0); }
+  15%, 45%, 75% { transform: rotate(20deg); }
+  30%, 60% { transform: rotate(-10deg); }
+}
+
+@keyframes emoji-clap {
+  0%, 100% { transform: scale(1); }
+  12%, 40%, 68% { transform: scale(0.82); }
+  26%, 54%, 82% { transform: scale(1.12); }
+}
+
+@keyframes emoji-thumb {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  28% { transform: translateY(-18%) rotate(-14deg) scale(1.12); }
+  55% { transform: translateY(0) rotate(4deg); }
+  75% { transform: translateY(-5%) rotate(-3deg); }
+}
+
+@keyframes emoji-cry {
+  0%, 100% { transform: translate(0, 0); }
+  10%, 30%, 50%, 70% { transform: translate(-2px, 1px); }
+  20%, 40%, 60% { transform: translate(2px, -1px); }
+  85% { transform: translateY(6%) scale(0.95, 1.05); }
+}
+
+@keyframes emoji-angry {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-6%) rotate(-4deg) scale(1.06); }
+  20%, 40%, 60%, 80% { transform: translateX(6%) rotate(4deg) scale(1.06); }
+}
+
+@keyframes emoji-shock {
+  0%, 100% { transform: scale(1); }
+  20% { transform: scale(1.32); }
+  36% { transform: scale(0.9); }
+  52% { transform: scale(1.08); }
+  72% { transform: scale(0.98); }
+}
+
+@keyframes emoji-party {
+  0% { transform: rotate(0) scale(1); }
+  28% { transform: rotate(-22deg) scale(1.18); }
+  70% { transform: rotate(372deg) scale(1.08); }
+  100% { transform: rotate(360deg) scale(1); }
+}
+
+@keyframes emoji-fire {
+  0%, 100% { transform: scale(1); }
+  20% { transform: scale(1.06, 1.2); }
+  40% { transform: scale(0.96, 1.02); }
+  60% { transform: scale(1.05, 1.15); }
+  80% { transform: scale(0.98, 1.02); }
+}
+
+@keyframes emoji-sleep {
+  0%, 100% { transform: translateY(0) rotate(0); }
+  50% { transform: translateY(-10%) rotate(-7deg); }
+}
+
+@keyframes emoji-jelly {
+  0%, 100% { transform: scale(1, 1); }
+  20% { transform: scale(1.2, 0.82); }
+  40% { transform: scale(0.88, 1.14); }
+  60% { transform: scale(1.06, 0.95); }
+  80% { transform: scale(0.98, 1.02); }
+}
+
+/* 长按聚焦时的克隆不重播动画 */
+.focused-bubble-wrapper .chat-emoji-jumbo-pop,
+.focused-bubble-wrapper .chat-emoji-jumbo-glyph,
+.focused-bubble-wrapper .chat-emoji-particle {
+  animation: none !important;
+}
+
+.focused-bubble-wrapper .chat-emoji-particle {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chat-emoji-jumbo-pop.is-entering,
+  .chat-emoji-jumbo-glyph[class*='is-anim-'],
+  .chat-emoji-particle {
+    animation: none;
+  }
+
+  .chat-emoji-particle {
+    display: none;
+  }
+}

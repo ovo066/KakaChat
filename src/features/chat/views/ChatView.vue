@@ -8,6 +8,7 @@
       @edit-contact="isGroupChat ? openEditGroup() : openEditContact()"
       @toggle-narrations="handleAvatarToggleNarrations"
       @start-call="handleStartCall"
+      @open-threads="showThreadsSheet = true" @open-search="openSearch" @open-memory="openMemoryPanel"
     />
 
     <ChatSearchOverlay
@@ -88,6 +89,7 @@
       @send="sendMessage"
       @send-sticker="sendSticker"
       @open-photo="openPhotoPicker"
+      @open-file="openFilePicker"
       @open-camera="openMockCameraModal"
       @open-sticker="openStickerPanel"
       @open-memory="openMemoryPanel"
@@ -99,24 +101,14 @@
       @open-search="openSearch"
       @open-meet="openMeetModal"
       @open-snoop="handleOpenSnoop"
+      @open-threads="showThreadsSheet = true"
     />
 
-    <input
-      ref="readerFileInput"
-      type="file"
-      class="hidden"
-      accept=".txt,.epub"
-      @change="handleReaderFileInput"
-    >
+    <input ref="readerFileInput" type="file" class="hidden" accept=".txt,.epub" @change="handleReaderFileInput">
+    <input ref="fileInput" type="file" class="hidden" :accept="FILE_INPUT_ACCEPT" multiple @change="handleFileInput">
+    <input ref="photoInput" type="file" class="hidden" accept="image/*" multiple @change="handlePhotoInput">
 
-    <input
-      ref="photoInput"
-      type="file"
-      class="hidden"
-      accept="image/*"
-      multiple
-      @change="handlePhotoInput"
-    >
+    <ChatThreadsSheet v-if="showThreadsSheet" :visible="showThreadsSheet" :contact="store.activeChat" @close="showThreadsSheet = false" />
 
     <ChatStickerLayers
       :show-sticker-panel="store.showStickerPanel"
@@ -245,6 +237,7 @@
       :is-user="contextMenuIsUser"
       :favorited="contextMenuFavorited"
       :focused-bubble="focusedBubble"
+      :reaction-menu="reactionMenu" @react="handleReact"
       @hide="hideContextMenu"
       @reply="handleReply"
       @copy="handleCopy"
@@ -291,6 +284,7 @@ import { useRouter, useRoute } from 'vue-router'
 import {
   ChatMemoryIntegration,
   ChatReaderIntegration,
+  ChatThreadsSheet,
   GiftPickerPanel,
   MeetInviteModal,
   MockImageModal,
@@ -312,6 +306,7 @@ import { useChatCalls } from '../composables/useChatCalls'
 import { useChatInteractiveFeatures } from '../composables/useChatInteractiveFeatures'
 import { useChatMessageActions } from '../composables/useChatMessageActions'
 import { useChatPanels } from '../composables/useChatPanels'
+import { FILE_INPUT_ACCEPT } from '../files/fileMessages'
 import { useChatReaderIntegration } from '../composables/useChatReaderIntegration'
 import { useChatStickerManager } from '../composables/useChatStickerManager'
 import { useChatPlannerActions } from '../composables/useChatPlannerActions'
@@ -373,6 +368,7 @@ const {
 })
 const chatInputRef = ref(null)
 const messageListRef = ref(null)
+const showThreadsSheet = ref(false)
 
 function closePlusMenu() {
   chatInputRef.value?.closeMenu?.()
@@ -411,6 +407,7 @@ const {
 const {
   backFromMemorySettings,
   closeMemoryPanel,
+  fileInput, handleFileInput, openFilePicker,
   handlePhotoInput,
   openMemoryPanel,
   openMemorySettings,
@@ -424,7 +421,7 @@ const {
   closePlusMenu,
   compressImage,
   musicStore,
-  store
+  store, showToast, scheduleSave
 })
 const {
   closeStickerBatchModal,
@@ -637,7 +634,7 @@ const {
   openCallHistoryFromBubble,
   handleEnterMultiSelect,
   contextMenuFavorited,
-  handleFavorite,
+  handleFavorite, handleReact, reactionMenu,
   handleFavoriteSelectedBlocks
 } = useChatInteractionSurface({
   store,
@@ -656,6 +653,7 @@ const {
 
 const { scrollToBottom } = useChatViewLifecycle({
   route,
+  router,
   store,
   messageListRef,
   messageWindowLimit,
@@ -664,7 +662,8 @@ const { scrollToBottom } = useChatViewLifecycle({
   contextMenuVisible,
   hideContextMenu,
   narrationMenuVisible,
-  hideNarrationMenu
+  hideNarrationMenu,
+  onQuickSend: text => sendAndRequestReply(text)
 })
 
 const { processAssistantImageTokens, rerollImageMessage } = useChatImageTokens({
@@ -695,6 +694,7 @@ const {
   handleReply,
   inputText,
   saveEdit,
+  sendAndRequestReply,
   sendMessage
 } = useChatMessageActions({
   albumStore,
@@ -725,5 +725,4 @@ const {
   showToast,
   store
 })
-
 </script>

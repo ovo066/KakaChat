@@ -26,6 +26,20 @@ describe('messageHistoryBuilder', () => {
     ])
   })
 
+  it('tells the model which user messages it left on read', () => {
+    const contextMsgs = [
+      { id: 'u1', role: 'user', content: 'hello' },
+      { id: 'u2', role: 'user', content: 'are you there', readOnlyAt: 1, readOnlyReason: '在忙' },
+      { id: 'u3', role: 'user', content: '?' }
+    ]
+
+    expect(buildDirectChatApiMessages(contextMsgs, contextMsgs)).toEqual([
+      { role: 'user', content: 'hello' },
+      { role: 'user', content: 'are you there\n（你已读了以上消息，但当时选择了不回复，原因：在忙）' },
+      { role: 'user', content: '?' }
+    ])
+  })
+
   it('builds group single history with user prefixes', () => {
     const contextMsgs = [
       { role: 'user', content: 'hello' },

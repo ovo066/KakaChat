@@ -4,7 +4,7 @@ import { buildApiRequestMessages, buildGroupSingleRequestPlan } from '../request
 import { appendInstructionMessage } from '../streamingRequest'
 import { createAssistantMessage } from '../assistantMessageLifecycle'
 import { parseGroupReplyMessages } from '../groupReplyParser'
-import { applyAssistantInteractionDecisions } from '../../../features/chat'
+import { applyAssistantInteractionDecisions, applyAssistantReactions } from '../../../features/chat'
 import { finalizeAssistantTurn } from './chatSideEffects'
 import { executeChatStreamOrchestrator } from './sharedChatExecutor'
 import { prepareChatTools } from './toolPreparation'
@@ -176,12 +176,13 @@ export async function runGroupSingleChatOrchestrator(context, onChunk) {
           message: newMsg,
           makeId: makeMsgId
         })
+        const reactionResult = applyAssistantReactions({ activeChat, message: newMsg })
         if (parsedReply.replyToText) {
           newMsg.replyToText = parsedReply.replyToText
           const quotedMsg = activeChat.msgs.find(message => message.content && message.content.includes(parsedReply.replyToText))
           if (quotedMsg) newMsg.replyTo = quotedMsg.id
         }
-        if (trimText(newMsg.content) || interactionResult.resolvedCount === 0) {
+        if (trimText(newMsg.content) || (interactionResult.resolvedCount === 0 && reactionResult.tokenCount === 0)) {
           activeChat.msgs.push(newMsg)
           appendedReplyCount += 1
         }

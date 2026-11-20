@@ -59,7 +59,9 @@
         <span class="w-28 text-[16px] text-[var(--text-primary)] shrink-0">决策API</span>
         <select v-model="store.livenessConfig.decisionConfigId" class="flex-1 text-[var(--primary-color)] bg-transparent outline-none text-right min-w-0" @change="scheduleSave">
           <option value="">跟随联系人配置</option>
-          <option v-for="c in configsStore.configs" :key="c.id" :value="c.id">{{ c.name }}</option>
+          <optgroup v-for="g in configsStore.providerGroups" :key="g.provider.id" :label="g.provider.name">
+                <option v-for="cfg in g.models" :key="cfg.id" :value="cfg.id">{{ cfg.modelLabel }}</option>
+              </optgroup>
         </select>
       </div>
       <div class="px-4 py-3 flex justify-between items-center border-t border-[var(--border-color)]">

@@ -1,5 +1,6 @@
 import { resolveOptionalMaxTokens, parseOptionalTemperature } from './chatCompletions'
 import { prepareApiKey } from '../../utils/httpHeaders'
+import { applyGeminiThinking } from './thinkingConfig'
 
 const DEFAULT_ERROR_TEXT_LIMIT = 200
 
@@ -201,6 +202,7 @@ export function buildGeminiGenerateContentRequest(cfg = {}, messages = [], optio
   const maxTokens = resolveOptionalMaxTokens(cfg.maxTokens, options.maxTokens, options.max_tokens)
   if (maxTokens !== null) generationConfig.maxOutputTokens = maxTokens
   if (Object.keys(generationConfig).length > 0) body.generationConfig = generationConfig
+  applyGeminiThinking(body, options.reasoningEffort ?? cfg.reasoningEffort)
   const tools = normalizeGeminiTools(options.tools)
   if (tools.length > 0) {
     body.tools = tools

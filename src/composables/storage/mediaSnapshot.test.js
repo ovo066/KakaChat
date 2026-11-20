@@ -208,6 +208,7 @@ describe('mediaSnapshot runtime cache', () => {
         contact_1: {
           avatar: sampleImage('8'),
           characterImage: sampleImage('9'),
+          voiceBackground: sampleImage('v'),
           backgrounds: [sampleImage('b')],
           sprites: {
             happy: sampleImage('c')
@@ -306,6 +307,7 @@ describe('mediaSnapshot runtime cache', () => {
     expect(packed.planner.diaryEntries[0].imageRefs[0]).toMatch(/^media:/)
     expect(packed.callResources.contact_1.backgroundRefs[0]).toMatch(/^media:/)
     expect(packed.callResources.contact_1.spriteRefs.happy).toMatch(/^media:/)
+    expect(packed.callResources.contact_1.voiceBackgroundRef).toMatch(/^media:/)
     expect(packed.characterResources.contact_2.baseImage.urlRef).toMatch(/^media:/)
     expect(packed.characterResources.contact_2.expressions.happy.urlRef).toMatch(/^media:/)
     expect(packed.characterResources.contact_2.generationPrefs.characterRefImageRef).toMatch(/^media:/)
@@ -347,6 +349,7 @@ describe('mediaSnapshot runtime cache', () => {
     expect(snapshot.planner.diaryEntries[0].images[0]).toBe(sampleImage('7'))
     expect(snapshot.callResources.contact_1.backgrounds[0]).toBe(sampleImage('b'))
     expect(snapshot.callResources.contact_1.sprites.happy).toBe(sampleImage('c'))
+    expect(snapshot.callResources.contact_1.voiceBackground).toBe(sampleImage('v'))
     expect(snapshot.characterResources.contact_2.baseImage.url).toBe(sampleImage('d'))
     expect(snapshot.characterResources.contact_2.generationPrefs.vibeReferences[0].image).toBe(sampleImage('g'))
     expect(snapshot.vnProjects[0].saves[0].snapshot.playerSnapshot.currentBg.url).toBe(sampleImage('j'))

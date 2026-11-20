@@ -339,7 +339,7 @@ const exportBlocks = [
 function getBlockData(key) {
   switch (key) {
     case 'contacts': return contactsStore.contacts || []
-    case 'configs': return configsStore.configs || []
+    case 'configs': return configsStore.providers || []
     case 'lorebook': return lorebookStore.lorebook?.books || []
     case 'personas': return personasStore.personas || []
     case 'stickers': return stickersStore.stickers || []
@@ -359,7 +359,7 @@ function downloadJson(data, filename) {
 
 function redactConfigsForExport(configs) {
   if (!Array.isArray(configs)) return configs
-  return configs.map(cfg => {
+  return configs.map(cfg => { // 供应商与旧配置都有 key 字段
     if (!cfg || typeof cfg !== 'object') return cfg
     return { ...cfg, key: '' }
   })
@@ -420,7 +420,7 @@ function applyBlockData(key, data) {
       if (Array.isArray(data)) contactsStore.contacts = data
       break
     case 'configs':
-      if (Array.isArray(data)) configsStore.configs = data
+      configsStore.importConfigsBlock(data)
       break
     case 'lorebook':
       if (Array.isArray(data)) lorebookStore.lorebook.books = data

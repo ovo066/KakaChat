@@ -46,6 +46,9 @@ export function saveBackupToLocalStorage(snapshot) {
         if (Array.isArray(c.msgs) && c.msgs.length > 50) {
           c.msgs = c.msgs.slice(-50)
         }
+        if (Array.isArray(c.chatThreads)) {
+          c.chatThreads.forEach(t => { if (Array.isArray(t?.msgs)) t.msgs = t.msgs.slice(-20) })
+        }
       })
     }
     stripped.forum = []
@@ -61,6 +64,7 @@ export function saveBackupToLocalStorage(snapshot) {
     if (Array.isArray(minimal.contacts)) {
       minimal.contacts.forEach(c => {
         if (Array.isArray(c.msgs)) c.msgs = c.msgs.slice(-10)
+        if (Array.isArray(c.chatThreads)) c.chatThreads = []
       })
     }
     minimal.forum = []

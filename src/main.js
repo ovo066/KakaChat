@@ -13,6 +13,7 @@ import { useGiftsStore } from './stores/gifts'
 import { registerCustomGiftSource } from './data/gifts'
 import { useCloudSync } from './composables/useCloudSync'
 import { installDebugLogCapture } from './composables/useDebugLog'
+import { applyEarlyAppearanceHint, installAppearanceAutoSwitch } from './composables/useAppearanceMode'
 import '@phosphor-icons/web/regular'
 import '@phosphor-icons/web/bold'
 import '@phosphor-icons/web/fill'
@@ -21,11 +22,13 @@ import './style.css'
 installIosContextMenuPolyfill()
 installViewportSync()
 installDebugLogCapture()
+applyEarlyAppearanceHint()
 
 const app = createApp(App)
 const pinia = createPinia()
 app.use(pinia)
 app.use(router)
+installAppearanceAutoSwitch()
 const storageApi = useStorage()
 const accessStore = useAccessControlStore()
 const giftsStore = useGiftsStore()

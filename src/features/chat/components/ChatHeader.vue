@@ -51,6 +51,15 @@
         <div class="chat-header-name flex items-center gap-1 opacity-90">
           <span class="chat-header-name-text text-[13px] font-semibold text-[var(--text-primary)] leading-tight tracking-wide">{{ contact?.name || 'Bot' }}</span>
           <i class="chat-header-name-arrow ph-bold ph-caret-right text-[10px] text-[var(--text-secondary)] mt-[1px]"></i>
+          <button
+            v-if="threadCount > 1"
+            type="button"
+            class="chat-header-thread-pill"
+            @click.stop="$emit('openThreads')"
+          >
+            <i class="ph-fill ph-chats-circle text-[10px]"></i>
+            <span class="truncate">{{ contact?.currentThread?.title || threadCount + ' 段对话' }}</span>
+          </button>
         </div>
         <!-- 副标题/成员数 -->
         <div v-if="isGroup && contact?.members" class="chat-header-subtitle text-[10px] text-[var(--text-secondary)] font-normal opacity-65 mt-[2px]">
@@ -74,23 +83,44 @@
         </button>
       </div>
     </div>
+    <ChatContactCard
+      :visible="contactCardVisible"
+      :contact="contact"
+      :is-group="isGroup"
+      @close="contactCardVisible = false"
+      @edit="emit('editContact')"
+      @call="mode => { contactCardVisible = false; emit('startCall', mode) }"
+      @search="contactCardVisible = false; emit('openSearch')"
+      @memory="contactCardVisible = false; emit('openMemory')"
+      @threads="contactCardVisible = false; emit('openThreads')"
+      @deleted="contactCardVisible = false; router.push('/messages')"
+    />
   </div>
 </template>
 
 <script setup>
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useSettingsStore } from '../../../stores/settings'
 import { haptic } from '../../../utils/haptic'
+import { isIos26ThemeActive } from '../../../utils/themeDefaults'
+import ChatContactCard from './ChatContactCard.vue'
 
-defineProps({
+const props = defineProps({
   contact: { type: Object, default: null },
   badgeCount: { type: Number, default: 0 },
   isGroup: { type: Boolean, default: false }
 })
 
-const emit = defineEmits(['back', 'editContact', 'toggleNarrations', 'startCall'])
+const emit = defineEmits(['back', 'editContact', 'toggleNarrations', 'startCall', 'openThreads', 'openSearch', 'openMemory'])
+
+// 当前对话 + 已存档对话；只有真的开过新对话才显示胶囊
+const threadCount = computed(() => (
+  Array.isArray(props.contact?.chatThreads) ? props.contact.chatThreads.length + 1 : 1
+))
 
 const store = useSettingsStore()
+const router = useRouter()
 
 // 从主题配置读取
 const headerStyle = computed(() => store.theme.headerStyle || 'default')
@@ -136,6 +166,7 @@ function getGroupAvatarStyle(idx, total) {
 // 长按头像切换旁白
 let longPressTimer = null
 const avatarLongPressed = ref(false)
+const contactCardVisible = ref(false)
 
 function onAvatarDown() {
   avatarLongPressed.value = false
@@ -153,6 +184,11 @@ function onAvatarUp() {
 function onCenterClick() {
   if (avatarLongPressed.value) {
     avatarLongPressed.value = false
+    return
+  }
+  // iOS 26 主题：像 iMessage 一样先打开联系人卡片，编辑入口在卡片里
+  if (isIos26ThemeActive(store)) {
+    contactCardVisible.value = true
     return
   }
   emit('editContact')
@@ -197,6 +233,23 @@ function onAvatarClick() {
 .chat-header-name-arrow {
   display: inline;
 }
+.chat-header-thread-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  max-width: 96px;
+  margin-left: 2px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 14px;
+  color: var(--primary-color, #007AFF);
+  background: color-mix(in srgb, var(--primary-color, #007AFF) 12%, transparent);
+}
+.chat-header-thread-pill:active {
+  opacity: 0.6;
+}
 
 /* Glass effect enhancement */
 .glass-panel {
@@ -207,7 +260,7 @@ function onAvatarClick() {
   box-shadow: 0 4px 20px rgba(0,0,0,0.06);
 }
 
-:global(.dark) .glass-panel {
+.dark .glass-panel {
   box-shadow: 0 6px 20px rgba(0,0,0,0.35);
 }
 </style>

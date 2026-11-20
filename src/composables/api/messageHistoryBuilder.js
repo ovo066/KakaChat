@@ -1,4 +1,19 @@
-import { pickFullSmartUIMessages, rewriteSmartUIContentForModel } from '../../features/chat'
+import {
+  appendReactionNote,
+  buildFileMessageModelContent,
+  pickFullSmartUIMessages,
+  rewriteSmartUIContentForModel
+} from '../../features/chat'
+import { appendReadOnlyNote } from './readOnlyNote'
+
+// 已读不回 + 表情回应，都以括注的形式跟在消息后面告诉模型
+function appendMessageNotes(message, content, reactionOptions) {
+  return appendReactionNote(message, appendReadOnlyNote(message, content), reactionOptions)
+}
+
+function resolveTextContent(message) {
+  return message?.isFile ? buildFileMessageModelContent(message) : message?.content
+}
 
 function isImagePlaceholder(content) {
   return content === '[\u56FE\u7247]'
@@ -75,17 +90,19 @@ export function buildDirectChatApiMessages(contextMsgs = [], allMessages = []) {
       const text = (message.content && !isImagePlaceholder(message.content)) ? message.content : ''
       return {
         role: message.role,
-        content: buildImageParts(message.imageUrl, text)
+        content: buildImageParts(message.imageUrl, appendMessageNotes(message, text))
       }
     }
 
-    let content = rewriteSmartUIContentForModel(message, message.content, fullSmartUIMessages.has(message))
+    let content = message?.isFile
+      ? resolveTextContent(message)
+      : rewriteSmartUIContentForModel(message, message.content, fullSmartUIMessages.has(message))
     const replyText = resolveReplyText(message, allMessages)
     if (replyText) {
       content = `[quote:${replyText}]\n${content}`
     }
 
-    return { role: message.role, content }
+    return { role: message.role, content: appendMessageNotes(message, content) }
   })
 }
 
@@ -107,17 +124,17 @@ export function buildGroupSingleApiMessages(contextMsgs = []) {
       }
       return {
         role: message.role,
-        content: buildImageParts(message.imageUrl, text)
+        content: buildImageParts(message.imageUrl, appendReactionNote(message, text, { namedActors: true }))
       }
     }
 
-    let content = message.content
+    let content = resolveTextContent(message)
     if (message.role === 'user') {
-      content = `[\u7528\u6237]: ${message.content}`
+      content = `[\u7528\u6237]: ${resolveTextContent(message)}`
     } else if (message.role === 'assistant') {
-      content = prefixGroupAssistantContent(message, message.content)
+      content = prefixGroupAssistantContent(message, resolveTextContent(message))
     }
-    return { role: message.role, content }
+    return { role: message.role, content: appendReactionNote(message, content, { namedActors: true }) }
   })
 }
 
@@ -138,11 +155,12 @@ export function buildGroupMultiApiMessages(contextMsgs = [], memberId) {
         : baseContent
       return {
         role,
-        content: buildImageParts(message.imageUrl, text)
+        content: buildImageParts(message.imageUrl, appendReactionNote(message, text, { selfMemberId: memberId }))
       }
     }
 
-    const content = prefix ? `${prefix} ${message.content}` : message.content
-    return { role, content }
+    const text = resolveTextContent(message)
+    const content = prefix ? `${prefix} ${text}` : text
+    return { role, content: appendReactionNote(message, content, { selfMemberId: memberId }) }
   })
 }

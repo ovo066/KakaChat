@@ -176,46 +176,12 @@
         </template>
       </div>
 
-      <!-- API Config Binding -->
+      <!-- 模型：按供应商分组折叠选择 -->
       <div class="w-full bg-white dark:bg-[#2c2c2e] rounded-[10px] overflow-hidden">
         <div class="px-4 py-3 border-b border-[#E5E5EA] dark:border-gray-700">
-          <span class="text-[13px] text-[#8E8E93] uppercase">API配置</span>
+          <span class="text-[13px] text-[#8E8E93] uppercase">模型</span>
         </div>
-        <div
-          class="px-4 py-3 flex justify-between items-center cursor-pointer active:bg-gray-100 dark:active:bg-gray-800 border-b border-[#E5E5EA] dark:border-gray-700"
-          @click="form.configId = null"
-        >
-          <div class="flex items-center gap-2">
-            <span class="text-xl">🌐</span>
-            <span class="text-[17px] text-black dark:text-white">使用全局默认</span>
-          </div>
-          <div
-            class="w-[24px] h-[24px] rounded-full border-2 flex items-center justify-center"
-            :class="!form.configId ? 'bg-[#34C759] border-[#34C759]' : 'border-[#C6C6C8]'"
-          >
-            <i v-if="!form.configId" class="ph-bold ph-check text-white text-sm"></i>
-          </div>
-        </div>
-        <div
-          v-for="cfg in configsStore.configs"
-          :key="cfg.id"
-          class="px-4 py-3 flex justify-between items-center cursor-pointer active:bg-gray-100 dark:active:bg-gray-800 border-b border-[#E5E5EA] dark:border-gray-700 last:border-b-0"
-          @click="form.configId = cfg.id"
-        >
-          <div class="flex items-center gap-2">
-            <span class="text-xl">🔌</span>
-            <div>
-              <span class="text-[17px] text-black dark:text-white">{{ cfg.name }}</span>
-              <div class="text-[12px] text-[#8E8E93]">{{ cfg.model }}</div>
-            </div>
-          </div>
-          <div
-            class="w-[24px] h-[24px] rounded-full border-2 flex items-center justify-center"
-            :class="form.configId === cfg.id ? 'bg-[#34C759] border-[#34C759]' : 'border-[#C6C6C8]'"
-          >
-            <i v-if="form.configId === cfg.id" class="ph-bold ph-check text-white text-sm"></i>
-          </div>
-        </div>
+        <ModelSelectField v-model="form.configId" title="角色使用的模型" :follow-hint="defaultModelHint" />
       </div>
 
       <div class="w-full bg-white dark:bg-[#2c2c2e] rounded-[10px] overflow-hidden">
@@ -379,6 +345,7 @@ import { showConfirm } from '../../composables/useConfirm'
 import { normalizeImageUrlInput } from '../../utils/mediaUrl'
 import { sanitizeMiniMaxVoiceId } from '../../utils/minimaxConfig'
 import { listAvailableMcpServers, normalizeMcpServerIds } from '../../utils/mcpServers'
+import ModelSelectField from '../common/ModelSelectField.vue'
 import IosModal from '../common/IosModal.vue'
 
 const props = defineProps({
@@ -394,6 +361,7 @@ const emit = defineEmits(['close', 'saved', 'deleted'])
 
 const contactsStore = useContactsStore()
 const configsStore = useConfigsStore()
+const defaultModelHint = computed(() => configsStore.getConfig?.id ? `当前：${configsStore.getConfig.name}` : '尚未设置默认模型')
 const lorebookStore = useLorebookStore()
 const personasStore = usePersonasStore()
 const settingsStore = useSettingsStore()

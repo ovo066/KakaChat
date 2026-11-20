@@ -148,6 +148,10 @@ export function buildSpecialFeaturesSystemPrompt(store) {
     rows.push('(收藏:用户) / (favorite:user) — 将 {{user}} 最近一条消息气泡加入收藏')
   }
 
+  if (store.allowAIReaction !== false) {
+    rows.push('(react:表情) — 像 iMessage 那样给 {{user}} 最近一条消息点个表情回应，可用 ❤️ 👍 👎 😂 ‼️ ❓ 或任意 emoji；回应更早的某句写 (react:表情:原话片段)。可以只回应不说话，偶尔用，别每条都点')
+  }
+
   const allowCall = store.allowAICall !== false
   if (allowCall) {
     rows.push('(call:voice或video:文案) — 发起通话')
@@ -186,6 +190,10 @@ export function buildSpecialFeaturesSystemPrompt(store) {
     rows.push('(music:歌名:歌手) — 推歌，仅在自然涉及音乐时使用')
   }
 
+  if (store.allowAIRecall !== false) {
+    rows.push('(recall:原话) — 发出后立刻撤回的一句话：{{user}} 只看到"撤回了一条消息"，但能点开偷看原文。说漏嘴、冲动发言又反悔时偶尔使用；想撤回/删除消息时必须用它，不要在旁白里描写撤回或删除')
+  }
+
   if (store.allowAIImageGeneration) {
     const promptStyle = resolveImagePromptStyle(store.vnImageGenConfig || {})
     if (usesNaturalLanguageImagePrompt(promptStyle)) {
@@ -195,8 +203,19 @@ export function buildSpecialFeaturesSystemPrompt(store) {
     }
   }
 
+  const fileRule = store.allowAIFile
+    ? [
+        '发送文件：当用户要求、或内容明显适合做成文档（清单/计划/代码/信件/长文）时，可输出',
+        '<file name="文件名.扩展名">',
+        '文件完整内容',
+        '</file>',
+        '文件块外照常聊天；扩展名用 md/txt/json/csv/html/代码等文本格式；平时聊天不要用。'
+      ].join('\n')
+    : ''
+
   if (rows.length === 0) {
     const lines = []
+    if (fileRule) lines.push(fileRule)
     if (store.allowAIEmotionTag && !store.allowAIVoice) {
       lines.push('语气标签：正文前可加 [emotion:xxx] 让回复更有情绪感。可用：normal/happy/sad/surprised/angry/shy/thinking/laughing/excited/worried/confused/love/sleepy/proud/nervous')
     }
@@ -207,6 +226,7 @@ export function buildSpecialFeaturesSystemPrompt(store) {
 
   const lines = ['以下 token 独占一行，仅在有意图时使用：']
   rows.forEach(r => lines.push('- ' + r))
+  if (fileRule) lines.push(fileRule)
   if (decisionRows.length > 0) {
     lines.push('若用户发来待处理互动卡片，你也可以用这些决策 token 表态：')
     decisionRows.forEach(r => lines.push('- ' + r))

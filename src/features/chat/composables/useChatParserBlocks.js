@@ -21,6 +21,8 @@ export function useChatParserBlocks(options) {
     allowAIMockImage: () => store.allowAIMockImage,
     allowAIMusicRecommend: () => store.allowAIMusicRecommend,
     allowAIMeet: () => store.allowAIMeet,
+    allowAIRecall: () => store.allowAIRecall,
+    allowAIFile: () => store.allowAIFile,
     showToolLog: () => !!store.toolCallingConfig?.showToolLog,
     showReasoning: () => !!store.toolCallingConfig?.showReasoning,
     timestampGapMs,
@@ -31,6 +33,7 @@ export function useChatParserBlocks(options) {
     showNarrations: () => store.showNarrations,
     getMockImagePlaceholder: () => store.theme.mockImagePlaceholder,
     getActiveContactId: () => String(store.activeChat?.id || '').trim(),
+    getContactName: () => store.activeChat?.name || '',
     getContactAvatar: () => store.activeChat
       ? { avatar: store.activeChat.avatar, avatarType: store.activeChat.avatarType }
       : null,

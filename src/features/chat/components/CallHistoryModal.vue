@@ -284,7 +284,7 @@ onBeforeUnmount(() => {
   -webkit-backdrop-filter: blur(24px) saturate(140%);
 }
 
-:global(.dark) .ins-call-history-panel {
+.dark .ins-call-history-panel {
   border-color: rgba(255, 255, 255, 0.16);
   background:
     linear-gradient(145deg, rgba(25, 23, 32, 0.9), rgba(32, 28, 40, 0.76)),
@@ -297,7 +297,7 @@ onBeforeUnmount(() => {
   border-bottom: 1px solid rgba(17, 24, 39, 0.06);
 }
 
-:global(.dark) .ins-call-history-header {
+.dark .ins-call-history-header {
   border-bottom-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -339,7 +339,7 @@ onBeforeUnmount(() => {
   transform: scale(0.92);
 }
 
-:global(.dark) .ins-close {
+.dark .ins-close {
   background: rgba(255, 255, 255, 0.1);
 }
 
@@ -363,7 +363,7 @@ onBeforeUnmount(() => {
   margin-bottom: 0;
 }
 
-:global(.dark) .ins-record {
+.dark .ins-record {
   border-color: rgba(255, 255, 255, 0.12);
   background: rgba(255, 255, 255, 0.05);
 }
@@ -473,7 +473,7 @@ onBeforeUnmount(() => {
   gap: 7px;
 }
 
-:global(.dark) .ins-transcript-wrap {
+.dark .ins-transcript-wrap {
   border-top-color: rgba(255, 255, 255, 0.08);
 }
 
@@ -490,11 +490,11 @@ onBeforeUnmount(() => {
   background: rgba(214, 51, 132, 0.06);
 }
 
-:global(.dark) .ins-transcript-line.is-user {
+.dark .ins-transcript-line.is-user {
   background: rgba(255, 255, 255, 0.05);
 }
 
-:global(.dark) .ins-transcript-line.is-ai {
+.dark .ins-transcript-line.is-ai {
   background: rgba(255, 114, 179, 0.12);
 }
 
@@ -548,7 +548,7 @@ onBeforeUnmount(() => {
   background: rgba(17, 24, 39, 0.06);
 }
 
-:global(.dark) .ins-empty-icon {
+.dark .ins-empty-icon {
   background: rgba(255, 255, 255, 0.1);
 }
 

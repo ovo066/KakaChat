@@ -16,3 +16,4 @@ export const CallHistoryModal = defineAsyncComponent(() => import('./components/
 export const SnoopConsentDialog = defineAsyncComponent(() => import('./components/SnoopConsentDialog.vue'))
 export const ChatMemoryIntegration = defineAsyncComponent(() => import('../../components/integrations/chat/ChatMemoryIntegration.vue'))
 export const ChatReaderIntegration = defineAsyncComponent(() => import('../../components/integrations/chat/ChatReaderIntegration.vue'))
+export const ChatThreadsSheet = defineAsyncComponent(() => import('./components/ChatThreadsSheet.vue'))

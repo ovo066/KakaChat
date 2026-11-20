@@ -4,6 +4,7 @@ import { favoritePartIndexToKey } from '../../../utils/messageFavorites'
 export function useChatViewLifecycle(options) {
   const {
     route,
+    router,
     store,
     messageListRef,
     messageWindowLimit,
@@ -12,7 +13,8 @@ export function useChatViewLifecycle(options) {
     contextMenuVisible,
     hideContextMenu,
     narrationMenuVisible,
-    hideNarrationMenu
+    hideNarrationMenu,
+    onQuickSend
   } = options
 
   let scrollScheduled = false
@@ -74,19 +76,30 @@ export function useChatViewLifecycle(options) {
     }
   }
 
+  // 桌面角色卡的快捷回复带着 ?quick= 进来：先把 query 清掉（返回时不会重发），再发出去并请求回复
+  async function consumeQuickSend() {
+    const text = String(route.query.quick ?? '').trim()
+    if (!text || typeof onQuickSend !== 'function') return
+    const { quick: _quick, ...rest } = route.query
+    await router?.replace({ query: rest })
+    onQuickSend(text)
+  }
+
   onMounted(() => {
     document.addEventListener('click', handleDocumentClick)
+    void consumeQuickSend()
   })
 
   watch(() => route.params.contactId, () => {
     syncActiveChatFromRoute()
   }, { immediate: true })
 
-  watch(() => store.activeChat?.id, () => {
+  // 切换联系人或切换同一角色的不同对话（currentThread）都视为换了一条时间线
+  watch(() => [store.activeChat?.id, store.activeChat?.currentThread?.id], () => {
     messageWindowLimit.value = initialMessageWindow
   }, { immediate: true })
 
-  watch(() => [store.activeChat?.id, store.activeChat?.msgs?.length || 0], () => {
+  watch(() => [store.activeChat?.id, store.activeChat?.currentThread?.id, store.activeChat?.msgs?.length || 0], () => {
     scrollToBottom()
   }, { immediate: true, flush: 'post' })
 

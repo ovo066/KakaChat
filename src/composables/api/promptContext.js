@@ -41,11 +41,20 @@ export function createPromptContext({
     get allowAICall() {
       return settingsStore.allowAICall
     },
+    get allowAIFile() {
+      return settingsStore.allowAIFile
+    },
+    get allowAIRecall() {
+      return settingsStore.allowAIRecall
+    },
     get allowAITransfer() {
       return settingsStore.allowAITransfer
     },
     get allowAIFavorite() {
       return settingsStore.allowAIFavorite
+    },
+    get allowAIReaction() {
+      return settingsStore.allowAIReaction
     },
     get allowAIGift() {
       return settingsStore.allowAIGift

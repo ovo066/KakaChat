@@ -47,6 +47,7 @@ import {
   hasRecentDuplicateAssistantMessage
 } from './liveness/duplicateDetection'
 import { buildContextMessages } from './api/contextWindow'
+import { appendReadOnlyNote } from './api/readOnlyNote'
 import { usePlannerStore } from '../stores/planner'
 import { getDayStartTimestamp } from '../utils/beijingTime'
 import { toLocalDateKey } from '../utils/dateKey'
@@ -312,7 +313,7 @@ export function useLivenessEngine() {
       .filter(m => m && !m.hideInChat && !m.hidden)
       .map(m => ({
         role: m.role,
-        content: (m.content || '').slice(0, 300)
+        content: appendReadOnlyNote(m, (m.content || '').slice(0, 300))
       }))
     const contextMsgs = buildContextMessages(allMsgs, {
       headRounds: 1,
@@ -510,7 +511,7 @@ export async function shouldSuppressReply(contactId, userMessage) {
     const systemPrompt = buildChatReadOnlyPrompt(contact, stateDesc, userMessage, { requireReason })
     const recentMsgs = (contact.msgs || []).slice(-2).map(m => ({
       role: m.role,
-      content: (m.content || '').slice(0, 120)
+      content: appendReadOnlyNote(m, (m.content || '').slice(0, 120))
     }))
     const messages = [
       { role: 'system', content: systemPrompt },
@@ -537,7 +538,7 @@ export async function shouldSuppressReply(contactId, userMessage) {
       })
     }
 
-    return { suppress: !result.shouldReply, reason: finalReason }
+    return { suppress: !result.shouldReply, reason: finalReason, recordReason: normalizedReason }
   } catch (e) {
     console.warn('[LivenessEngine] Chat read-only check failed:', e.message)
     return { suppress: false, error: e.message }

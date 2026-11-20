@@ -1,0 +1,1 @@
+export { gamesRoutes } from './routes'

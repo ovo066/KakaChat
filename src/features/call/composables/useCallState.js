@@ -28,9 +28,10 @@ const callMessages = ref([])
 const currentSpriteUrl = ref('')
 const currentBgUrl = ref('')
 const currentCharacterImage = ref('') // 模拟视频模式下的角色全身图
+const currentVoiceBgUrl = ref('') // 语音通话的自定义背景
 
 // 角色资源库（按联系人存储）
-// { [contactId]: { sprites: {}, backgrounds: [], avatar: '', characterImage: '' } }
+// { [contactId]: { sprites: {}, backgrounds: [], avatar: '', characterImage: '', voiceBackground: '' } }
 const callResources = reactive({})
 
 // 计时器
@@ -176,6 +177,7 @@ export function useCallState() {
     }
     // 加载角色形象图
     currentCharacterImage.value = res?.characterImage || ''
+    currentVoiceBgUrl.value = res?.voiceBackground || ''
 
     // 自动决定视频子模式：有角色图就用模拟视频，否则检查是否有立绘
     const hasCharRes = charResStore?.getEntry(contactId)
@@ -218,6 +220,7 @@ export function useCallState() {
       currentSpriteUrl.value = ''
       currentBgUrl.value = ''
       currentCharacterImage.value = ''
+      currentVoiceBgUrl.value = ''
     }, 1200)
   }
 
@@ -245,7 +248,7 @@ export function useCallState() {
   // 资源管理
   function getContactResources(contactId) {
     if (!callResources[contactId]) {
-      callResources[contactId] = { sprites: {}, backgrounds: [], avatar: '', characterImage: '' }
+      callResources[contactId] = { sprites: {}, backgrounds: [], avatar: '', characterImage: '', voiceBackground: '' }
     }
     return callResources[contactId]
   }
@@ -310,6 +313,15 @@ export function useCallState() {
     }
   }
 
+  /** 语音通话背景；传空字符串即恢复默认（头像模糊底） */
+  function setVoiceBackground(contactId, url) {
+    const res = getContactResources(contactId)
+    res.voiceBackground = url || ''
+    if (callContactId.value === contactId) {
+      currentVoiceBgUrl.value = res.voiceBackground
+    }
+  }
+
   // 序列化/反序列化
   function exportResources() {
     return JSON.parse(JSON.stringify(callResources))
@@ -339,6 +351,7 @@ export function useCallState() {
     currentSpriteUrl,
     currentBgUrl,
     currentCharacterImage,
+    currentVoiceBgUrl,
     callResources,
 
     // 方法
@@ -359,6 +372,7 @@ export function useCallState() {
     setContactAvatar,
     setCharacterImage,
     removeCharacterImage,
+    setVoiceBackground,
     exportResources,
     importResources
   }

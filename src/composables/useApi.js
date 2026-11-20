@@ -215,10 +215,12 @@ export function useApi() {
 
   // getContextWindowedMsgs moved to ./api/contextWindowing
 
-  async function fetchModels() {
-    const cfg = resolveConfig()
-    if (!cfg.url || !cfg.key) {
-      return buildApiFailure('CONFIG_MISSING', '请先填写 URL 和 Key', {
+  // 设置页传入正在编辑的供应商（地址 / Key / 协议），不传时用当前默认模型
+  async function fetchModels(cfgOverride = null) {
+    const cfg = cfgOverride || resolveConfig()
+    // Ollama 等本地服务不需要 Key，这里只校验地址
+    if (!cfg.url) {
+      return buildApiFailure('CONFIG_MISSING', '请先填写接口地址', {
         feature: 'chat',
         action: 'fetchModels'
       })

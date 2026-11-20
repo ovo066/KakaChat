@@ -2,7 +2,7 @@ import { buildChatCompletionPayload } from './chatCompletions'
 import { assertValidHeaders, mergeRequestHeaders, prepareApiKey } from '../../utils/httpHeaders'
 import { consumeChatCompletionsStream } from './stream'
 import { consumeToolAwareChatCompletionsStream } from './toolAwareStream'
-import { fetchOpenAICompat, readOpenAICompatError } from './openaiCompat'
+import { fetchOpenAICompat, readOpenAICompatError, resolveOpenAICompatUrl } from './openaiCompat'
 import {
   API_FORMAT_ANTHROPIC_MESSAGES,
   API_FORMAT_GEMINI_GENERATE_CONTENT,
@@ -22,6 +22,7 @@ import {
   consumeAnthropicMessagesStream,
   extractAnthropicNonStreamText,
   readAnthropicMessagesError,
+  resolveAnthropicMessagesUrl,
   sanitizeAnthropicBody
 } from './anthropicMessages'
 import {
@@ -29,6 +30,7 @@ import {
   consumeGeminiGenerateContentStream,
   extractGeminiNonStreamText,
   readGeminiGenerateContentError,
+  resolveGeminiGenerateContentUrl,
   sanitizeGeminiBody
 } from './geminiGenerateContent'
 import {
@@ -42,6 +44,17 @@ import {
 
 function getProviderFormat(cfg) {
   return normalizeApiFormat(cfg?.apiFormat)
+}
+
+/** 聊天请求最终发往的地址（设置页预览用，不含本地代理改写） */
+export function resolveProviderChatUrl(cfg = {}) {
+  const format = getProviderFormat(cfg)
+  if (format === API_FORMAT_ANTHROPIC_MESSAGES) return resolveAnthropicMessagesUrl(cfg.url)
+  if (format === API_FORMAT_GEMINI_GENERATE_CONTENT) {
+    return resolveGeminiGenerateContentUrl(cfg.url, cfg.model || 'MODEL', { stream: true })
+  }
+  if (format === API_FORMAT_OPENAI_RESPONSES) return resolveOpenAIResponsesUrl(cfg.url)
+  return resolveOpenAICompatUrl(cfg.url, '/chat/completions')
 }
 
 function buildNativeProviderRequest(cfg, messages, options = {}) {

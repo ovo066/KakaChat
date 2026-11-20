@@ -1,6 +1,6 @@
 <template>
   <div
-    v-if="visible"
+    v-show="visible"
     class="absolute bottom-0 left-0 right-0 bg-[var(--bg-color)] dark:bg-[var(--card-bg)] rounded-t-2xl shadow-2xl z-40"
     style="height: 45%;"
   >
@@ -47,7 +47,14 @@
         class="aspect-square bg-[var(--card-bg)] dark:bg-[var(--bg-color)] rounded-xl p-2 cursor-pointer active:scale-95 transition-transform flex flex-col items-center justify-center gap-1"
         @click="$emit('select', sticker.name)"
       >
-        <img :src="sticker.url" class="max-w-full max-h-[80%] object-contain" @error="handleImgError">
+        <img
+          :src="sticker.url"
+          class="sticker-panel-img max-w-full max-h-[80%] object-contain"
+          loading="lazy"
+          decoding="async"
+          @load="$event.target.classList.add('is-loaded')"
+          @error="handleImgError"
+        >
         <span v-if="searchQuery" class="text-[10px] text-[var(--text-secondary)] truncate w-full text-center">{{ sticker.name }}</span>
       </button>
     </div>
@@ -132,3 +139,15 @@ function handleImgError(e) {
   }
 }
 </script>
+
+<style scoped>
+/* 懒加载的贴纸加载完再淡入，避免一格格"蹦"出来 */
+.sticker-panel-img {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.sticker-panel-img.is-loaded {
+  opacity: 1;
+}
+</style>

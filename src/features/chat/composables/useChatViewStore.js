@@ -22,6 +22,8 @@ const SETTINGS_PROXY_FIELDS = [
   'allowAIMockImage',
   'allowAIMusicRecommend',
   'allowAIMeet',
+  'allowAIRecall',
+  'allowAIFile',
   'allowAIImageGeneration',
   'allowPlannerAI',
   'allowAIPlannerCapture',

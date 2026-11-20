@@ -396,8 +396,7 @@ html.ios-standalone #screen {
 }
 
 .bubble-text,
-.bubble-caption,
-.reply-context {
+.bubble-caption {
   display: block;
   max-width: 100%;
   font-family: inherit;
@@ -409,24 +408,20 @@ html.ios-standalone #screen {
   margin-right: 6px;
 }
 
-.bubble-user.has-tail { border-bottom-right-radius: 10px; }
-.bubble-user.has-tail::before {
-  content: ""; position: absolute; z-index: 0; bottom: 0; right: -8px;
-  height: 20px; width: 14px; background: var(--bubble-user-bg, #007AFF);
-  border-bottom-left-radius: 20px;
-  -webkit-mask-image:
-    linear-gradient(to right, #fff 6px, transparent 6px),
-    radial-gradient(circle at 16px 10px, transparent 10px, #fff 10px),
-    linear-gradient(to bottom, transparent 10px, #fff 10px);
-  mask-image:
-    linear-gradient(to right, #fff 6px, transparent 6px),
-    radial-gradient(circle at 16px 10px, transparent 10px, #fff 10px),
-    linear-gradient(to bottom, transparent 10px, #fff 10px);
-  -webkit-mask-composite: source-over, source-in;
-  mask-composite: add, intersect;
+/* iMessage (iOS 26) 尾巴：从气泡底边下方钩出的小弯角，气泡本身保持完整圆角。
+   形状按 Apple iOS 26 官方截图逐像素拟合；::before 仍是主题可覆盖的尾巴钩子。 */
+.bubble.has-tail { margin-bottom: 7px; }
+.bubble-user.has-tail::before,
+.bubble-ai.has-tail::before {
+  content: ""; position: absolute; z-index: -1; bottom: -8px;
+  width: 24px; height: 14px;
   display: var(--bubble-tail-display, block);
+  pointer-events: none;
 }
-
+.bubble-user.has-tail::before {
+  right: 0; background: var(--bubble-user-bg, #007AFF);
+  clip-path: path('M 2.20 6.00 C 2.99 6.00 3.44 6.17 4.00 6.51 C 6.81 8.47 9.84 10.44 12.88 12.12 C 13.44 12.52 13.89 13.25 14.45 13.25 C 15.07 13.25 15.63 12.29 15.63 11.45 C 15.63 10.38 13.61 8.92 13.55 6.67 C 13.49 4.99 14.07 3.36 15.36 2.46 L 16.13 1.28 L 2.20 1.28 Z');
+}
 .bubble-user.in-group { margin-bottom: 2px !important; }
 
 .bubble-ai {
@@ -435,74 +430,105 @@ html.ios-standalone #screen {
   margin-left: 6px;
 }
 
-.bubble-ai.has-tail { border-bottom-left-radius: 10px; }
 .bubble-ai.has-tail::before {
-  content: ""; position: absolute; z-index: 0; bottom: 0; left: -8px;
-  height: 20px; width: 14px; background-color: var(--bubble-ai-bg, #E9E9EB);
-  border-bottom-right-radius: 20px;
-  -webkit-mask-image:
-    linear-gradient(to left, #fff 6px, transparent 6px),
-    radial-gradient(circle at -2px 10px, transparent 10px, #fff 10px),
-    linear-gradient(to bottom, transparent 10px, #fff 10px);
-  mask-image:
-    linear-gradient(to left, #fff 6px, transparent 6px),
-    radial-gradient(circle at -2px 10px, transparent 10px, #fff 10px),
-    linear-gradient(to bottom, transparent 10px, #fff 10px);
-  -webkit-mask-composite: source-over, source-in;
-  mask-composite: add, intersect;
-  display: var(--bubble-tail-display, block);
+  left: 0; background: var(--bubble-ai-bg, #E9E9EB);
+  clip-path: path('M 21.80 6.00 C 21.01 6.00 20.56 6.17 20.00 6.51 C 17.19 8.47 14.16 10.44 11.12 12.12 C 10.56 12.52 10.11 13.25 9.55 13.25 C 8.93 13.25 8.37 12.29 8.37 11.45 C 8.37 10.38 10.39 8.92 10.45 6.67 C 10.51 4.99 9.93 3.36 8.64 2.46 L 7.87 1.28 L 21.80 1.28 Z');
 }
 
 .bubble-ai.in-group { margin-bottom: 2px !important; }
 
-/* 引用条：圆角面板 + 圆头竖条（跟随 currentColor 自适应用户/AI/深色），最多 3 行截断 */
+/* iMessage 式引用：原消息以缩小的描边气泡显示在回复上方，一条细线弯进回复气泡。
+   引用自己消息时文字用自己的气泡色（与 iMessage 一致），引用对方时用弱化的正文色。 */
 .reply-context {
+  --reply-quote-border: rgba(60, 60, 67, 0.2);
+  --reply-quote-line: rgba(142, 142, 147, 0.55);
   position: relative;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  font-size: 12.5px;
-  line-height: 17px;
-  margin: 1px 0 7px;
-  padding: 6px 10px 6px 15px;
-  border-radius: 12px;
-  background: rgba(0,0,0,0.055);
-  color: rgba(0,0,0,0.55);
-  max-width: 100%;
+  display: block;
+  max-width: calc(100% - 26px);
   min-width: 0;
-  overflow: hidden;
+  margin: 0 26px 5px;
+  padding: 5px 12px;
+  border-radius: 16px;
+  border: 1px solid var(--reply-quote-border);
+  background: var(--chat-bg, #fff);
+  font-size: 14px;
+  line-height: 18px;
+  font-family: var(--bubble-font, var(--theme-font, -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif));
   white-space: normal;
   overflow-wrap: anywhere;
   word-break: break-word;
+  -webkit-touch-callout: none;
 }
 
+.reply-context.is-linked {
+  cursor: pointer;
+}
+
+.reply-context.is-linked:active {
+  opacity: 0.6;
+}
+
+.reply-context-text {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.reply-context.is-from-ai {
+  color: color-mix(in srgb, var(--text-primary, #000) 62%, transparent);
+}
+
+.reply-context.is-from-user {
+  color: color-mix(in srgb, var(--bubble-user-bg, #007AFF) 86%, var(--text-primary, #000));
+}
+
+/* 连接线：从引用气泡外侧中部伸出，圆角拐下去落在回复气泡平直的上沿，末端藏在气泡后面 */
 .reply-context::before {
   content: "";
   position: absolute;
-  left: 6px;
-  top: 7px;
-  bottom: 7px;
-  width: 3px;
-  border-radius: 2px;
-  background: currentColor;
-  opacity: 0.45;
+  top: 50%;
+  width: 10px;
+  height: calc(50% + 10px);
+  border-top: 1.5px solid var(--reply-quote-line);
+  pointer-events: none;
+}
+
+.chat-message-ai .reply-context {
+  align-self: flex-start;
+  margin-right: 0;
+}
+
+.chat-message-ai .reply-context::before {
+  left: -11px;
+  border-left: 1.5px solid var(--reply-quote-line);
+  border-top-left-radius: 10px;
+}
+
+.chat-message-user .reply-context {
+  align-self: flex-end;
+  margin-left: 0;
+}
+
+.chat-message-user .reply-context::before {
+  right: -11px;
+  border-right: 1.5px solid var(--reply-quote-line);
+  border-top-right-radius: 10px;
+}
+
+.reply-context.is-before-jumbo::before {
+  height: calc(50% + 6px);
 }
 
 .reply-context:empty { display: none; }
 
-.bubble-user .reply-context {
-  background: rgba(255,255,255,0.20);
-  color: rgba(255,255,255,0.92);
+.dark .reply-context {
+  --reply-quote-border: rgba(235, 235, 245, 0.2);
+  --reply-quote-line: rgba(142, 142, 147, 0.5);
 }
 
-.bubble-ai .reply-context {
-  background: rgba(0,0,0,0.06);
-  color: rgba(0,0,0,0.60);
-}
-
-.dark .bubble-ai .reply-context {
-  background: rgba(255,255,255,0.09);
-  color: rgba(255,255,255,0.75);
+.dark .reply-context.is-from-user {
+  color: color-mix(in srgb, var(--bubble-user-bg, #0A84FF) 78%, #fff);
 }
 
 .msg-meta { font-size: 11px; margin-top: 1px; color: var(--meta-color, #8E8E93); font-weight: 500; }

@@ -22,6 +22,15 @@
     </div>
   </div>
 
+  <ChatRecallBlock
+    v-else-if="block.type === 'recall'"
+    :block="block"
+    :multi-select-mode="multiSelectMode"
+    :selected="isSelected"
+    @toggle-select="emit('toggle-select', $event)"
+    @context-menu="forwardContextMenu"
+  />
+
   <ChatMediaBlock
     v-else-if="isMediaType(block.type)"
     :block="block"
@@ -32,6 +41,7 @@
     @context-menu="forwardContextMenu"
   />
 
+  <ChatImageGroupBlock v-else-if="block.type === 'imageGroup'" v-bind="{ block, multiSelectMode, selected, showChatAvatars }" @toggle-select="emit('toggle-select', $event)" @context-menu="forwardContextMenu" />
   <ChatActionBlock
     v-else-if="isActionType(block.type)"
     :block="block"
@@ -48,6 +58,12 @@
     @accept-meet="emit('accept-meet', $event)"
     @reject-meet="emit('reject-meet', $event)"
     @open-transfer-detail="emit('open-transfer-detail', $event)"
+  />
+
+  <ChatFileBlock
+    v-else-if="block.type === 'file'"
+    v-bind="{ block, multiSelectMode, selected, showChatAvatars }"
+    @toggle-select="emit('toggle-select', $event)" @context-menu="forwardContextMenu"
   />
 
   <ChatAgentTraceBlock
@@ -113,8 +129,11 @@ import { computed, defineAsyncComponent, onBeforeUnmount, ref } from 'vue'
 import ChatAgentTraceBlock from './message-blocks/ChatAgentTraceBlock.vue'
 import ChatActionBlock from './message-blocks/ChatActionBlock.vue'
 import ChatBubbleBlock from './message-blocks/ChatBubbleBlock.vue'
+import ChatFileBlock from './message-blocks/ChatFileBlock.vue'
+import ChatImageGroupBlock from './message-blocks/ChatImageGroupBlock.vue'
 import ChatMediaBlock from './message-blocks/ChatMediaBlock.vue'
 import ChatMultiSelectCheckbox from './message-blocks/ChatMultiSelectCheckbox.vue'
+import ChatRecallBlock from './message-blocks/ChatRecallBlock.vue'
 // 智能界面渲染器体积较大，只在聊天里真正出现 <ui> 时才加载
 const ChatSmartUIBlock = defineAsyncComponent(() => import('./message-blocks/ChatSmartUIBlock.vue'))
 import { formatBeijingLocale } from '../../../utils/beijingTime'

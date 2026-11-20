@@ -2,7 +2,7 @@
   <div
     v-if="variant !== 'hidden'"
     class="home-indicator"
-    :class="{ 'home-indicator-subtle': variant === 'subtle' }"
+    :class="{ 'home-indicator-subtle': variant === 'subtle', 'home-indicator-ink': ink }"
     :style="{ bottom: indicatorBottom }"
     @click="$emit('click')"
   ></div>
@@ -15,6 +15,11 @@ const props = defineProps({
   variant: {
     type: String,
     default: 'ios'
+  },
+  // 浅色纸面桌面上用深色横条，否则白条看不见
+  ink: {
+    type: Boolean,
+    default: false
   }
 })
 
@@ -53,5 +58,12 @@ const indicatorBottom = computed(() => {
 }
 .dark .home-indicator-subtle {
   background: rgba(255, 255, 255, 0.6);
+}
+
+.home-indicator-ink {
+  background: rgba(46, 40, 35, 0.85);
+}
+.dark .home-indicator-ink {
+  background: rgba(238, 231, 218, 0.8);
 }
 </style>

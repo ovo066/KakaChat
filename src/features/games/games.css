@@ -1,0 +1,24 @@
+/* 海龟汤页共用的纸面 token（scoped 引入） */
+.sp-root {
+  --paper: #EFE7D8; --card: #FBF7EE; --ink: #2E2823; --ink-2: #74685B; --ink-3: #A79B8B;
+  --line: rgba(46, 40, 35, .12); --dot: rgba(46, 40, 35, .13); --accent: #D0543C;
+  --soup: radial-gradient(120% 90% at 20% 0%, #3E7C82 0%, #1D4A55 55%, #142F38 100%);
+  --shadow: 0 1px 0 rgba(255,255,255,.75) inset, 0 14px 26px -18px rgba(90, 60, 30, .6), 0 2px 5px -3px rgba(90, 60, 30, .25);
+  --hand: 'LXGW WenKai Screen', 'Kaiti SC', 'STKaiti', 'KaiTi', serif;
+  position: absolute; inset: 0; overflow-y: auto;
+  padding: var(--app-pt, 48px) 16px calc(28px + var(--app-safe-bottom, 0px));
+  color: var(--ink);
+  background-color: var(--paper);
+  background-image: radial-gradient(var(--dot) 1px, transparent 1.4px);
+  background-size: 18px 18px;
+  font-family: -apple-system, BlinkMacSystemFont, 'PingFang SC', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+}
+.sp-root[data-theme="night"] {
+  --paper: #1E1F28; --card: #2A2B36; --ink: #EEE7DA; --ink-2: #A9A193; --ink-3: #6F6A62;
+  --line: rgba(238, 231, 218, .1); --dot: rgba(238, 231, 218, .07); --accent: #E8826B;
+  --shadow: 0 16px 28px -18px rgba(0, 0, 0, .8), 0 2px 6px -3px rgba(0, 0, 0, .5);
+}
+.sp-root button { font: inherit; color: inherit; border: 0; background: none; padding: 0; cursor: pointer; text-align: inherit; }
+.sp-top { display: flex; align-items: center; gap: 8px; margin-bottom: 16px; }
+.sp-top h1 { flex: 1; margin: 0; text-align: center; font-family: var(--hand); font-size: 22px; font-weight: 700; letter-spacing: .06em; }
+.sp-icon { width: 38px; height: 38px; border-radius: 50%; display: grid !important; place-items: center; font-size: 17px; background: var(--card) !important; box-shadow: var(--shadow); }

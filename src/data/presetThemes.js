@@ -454,6 +454,7 @@ export const presetThemes = [
       // 不开 showMicButton：空输入时保留灰色发送箭头（可点击=空发送催回复），
       // 麦克风会替换发送键导致空发送入口丢失
       headerActions: ['video'],
+      contactCardStyle: 'ios26',
 
       primaryColor: '#0A84FF',
       // 应用级颜色（背景/卡片/文字/边框/导航）不在此覆盖：inline 主题变量会压过
@@ -728,24 +729,41 @@ html.dark {
 .bubble-ai.bubble-appear { will-change: transform; }
 /* 长按聚焦的克隆气泡会隐藏 ::after，给回实底 */
 .focused-bubble-wrapper .bubble-ai { background-color: var(--bubble-ai-bg) !important; }
-/* 尾巴形状不变，只截掉与气泡重叠的那一截（半透明叠两层会出深色角） */
-.bubble-ai.has-tail { border-bottom-left-radius: 0 !important; }
+/* 尾巴与默认主题同形，直接给它同样的磨砂 */
 .bubble-ai.has-tail::before {
   backdrop-filter: var(--lg-bubble-blur);
   -webkit-backdrop-filter: var(--lg-bubble-blur);
-  width: 8px !important;
-  border-radius: 0 !important;
-  -webkit-mask-image:
-    radial-gradient(circle at -2px 10px, transparent 10px, #fff 10px),
-    linear-gradient(to bottom, transparent 10px, #fff 10px) !important;
-  mask-image:
-    radial-gradient(circle at -2px 10px, transparent 10px, #fff 10px),
-    linear-gradient(to bottom, transparent 10px, #fff 10px) !important;
-  -webkit-mask-composite: source-in !important;
-  mask-composite: intersect !important;
 }
-.bubble-ai .reply-context { background: rgba(0,0,0,0.07); }
-.dark .bubble-ai .reply-context { background: rgba(255,255,255,0.10); }
+/* 引用缩略气泡（在回复气泡上方）：一片薄玻璃 */
+.reply-context {
+  background: rgba(255,255,255,0.42);
+  border-color: rgba(255,255,255,0.72);
+  backdrop-filter: blur(12px) saturate(1.6);
+  -webkit-backdrop-filter: blur(12px) saturate(1.6);
+}
+.dark .reply-context {
+  background: rgba(44,44,48,0.45);
+  border-color: rgba(255,255,255,0.14);
+}
+/* 支持 shape() 的内核：底板向下多铺 8px，按默认主题的尾巴形状把圆角气泡+尾巴裁成
+   同一块玻璃——分成两片时尾巴与圆角重叠处半透明会叠深、拼缝处还有细线；尾巴 ::before 退场 */
+@supports (clip-path: shape(from 0 0, line to 1px 1px)) {
+  .bubble-ai.has-tail::after {
+    bottom: -8px;
+    border-radius: 0;
+    clip-path: shape(from 20px 0, arc to 0 20px of 20px, vline to calc(100% - 28px),
+      arc to 8.64px calc(100% - 11.54px) of 20px,
+      curve to 10.45px calc(100% - 7.33px) with 9.93px calc(100% - 10.64px) / 10.51px calc(100% - 9.01px),
+      curve to 8.37px calc(100% - 2.55px) with 10.39px calc(100% - 5.08px) / 8.37px calc(100% - 3.62px),
+      curve to 9.55px calc(100% - 0.75px) with 8.37px calc(100% - 1.71px) / 8.93px calc(100% - 0.75px),
+      curve to 11.12px calc(100% - 1.88px) with 10.11px calc(100% - 0.75px) / 10.56px calc(100% - 1.48px),
+      curve to 20px calc(100% - 7.49px) with 14.16px calc(100% - 3.56px) / 17.19px calc(100% - 5.53px),
+      curve to 21.8px calc(100% - 8px) with 20.56px calc(100% - 7.83px) / 21.01px calc(100% - 8px),
+      hline to calc(100% - 20px), arc to 100% calc(100% - 28px) of 20px,
+      vline to 20px, arc to calc(100% - 20px) 0 of 20px, close);
+  }
+  .bubble-ai.has-tail::before { display: none; }
+}
 /* 键盘弹起时停掉气泡模糊（安卓键盘动画掉帧），不支持模糊时换实底 */
 :root.keyboard-open .bubble-ai::after,
 :root.keyboard-open .bubble-ai.has-tail::before {
@@ -839,6 +857,249 @@ html.dark {
   background: var(--lg-fill-solid) !important;
   border: none !important;
   box-shadow: var(--lg-rim), var(--lg-drop) !important;
+}
+
+/* === 卡片：iOS 26 信息里的分享卡片都是大圆角、无描边、柔和投影 === */
+html {
+  --lg-sheet: rgba(255,255,255,0.80);
+  --lg-sheet-2: rgba(236,236,241,0.94);
+  --lg-map: #EFEAE1;
+  --lg-map-road: #FFFFFF;
+  --lg-map-park: #CFE6C2;
+  --lg-map-water: #BBD7F2;
+  --lg-card-drop: 0 6px 22px rgba(0,0,0,0.10), 0 1px 2px rgba(0,0,0,0.05);
+}
+html.dark {
+  --lg-sheet: rgba(44,44,48,0.78);
+  --lg-sheet-2: rgba(44,44,48,0.92);
+  --lg-map: #2A2C30;
+  --lg-map-road: #44474D;
+  --lg-map-park: #29402C;
+  --lg-map-water: #1F3550;
+  --lg-card-drop: 0 6px 22px rgba(0,0,0,0.35);
+}
+
+/* 图片：单张圆角加大；多张的拼贴/叠放与保存按钮用玻璃 */
+.chat-messages .chat-image-single { border-radius: 22px !important; }
+.chat-messages .chat-album-save {
+  background: var(--lg-fill) !important;
+  box-shadow: var(--lg-rim), var(--lg-drop);
+  backdrop-filter: var(--lg-blur);
+  -webkit-backdrop-filter: var(--lg-blur);
+}
+.chat-messages .chat-album-count { color: #0A84FF; }
+.chat-messages[style*="background-image"] .chat-album-count {
+  color: #fff;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.45);
+}
+
+/* 音乐：仿 Apple Music 分享卡片——底色取自封面，右侧红色播放键 */
+.chat-view .chat-messages .music-card-wrap { max-width: 286px; }
+.chat-view .chat-messages .music-card {
+  background: var(--music-tint, #3A2A26);
+  border: none;
+  border-radius: 22px;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.12), var(--lg-card-drop);
+}
+.chat-view .chat-messages .music-card-body {
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px 11px 11px;
+}
+.chat-view .chat-messages .music-card-thumb {
+  width: 64px;
+  height: 64px;
+  border-radius: 9px;
+}
+.chat-view .chat-messages .music-card-play-overlay,
+.chat-view .chat-messages .music-card-footer { display: none; }
+.chat-view .chat-messages .music-card-title {
+  color: #fff;
+  font-size: 16px;
+  margin-bottom: 1px;
+}
+.chat-view .chat-messages .music-card-artist {
+  color: rgba(255,255,255,0.84);
+  font-size: 14px;
+}
+.chat-view .chat-messages .music-card-source {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  margin-top: 3px;
+  font-size: 13px;
+  font-weight: 500;
+  color: rgba(255,255,255,0.58);
+}
+.chat-view .chat-messages .music-card-cta {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  font-size: 16px;
+  color: #fff;
+  background: #FA2D48;
+  box-shadow: 0 3px 10px rgba(250,45,72,0.35);
+}
+
+/* 见面邀请：仿地图位置卡片——上半截地图 + 定位针，下半截地址 */
+.chat-view .meet-card {
+  width: 264px;
+  padding: 0 0 13px;
+  gap: 2px;
+  border: none;
+  border-radius: 22px;
+  color: var(--lg-ink);
+  background: var(--lg-sheet-2);
+  box-shadow: var(--lg-card-drop);
+}
+.chat-view .meet-card::before {
+  content: "";
+  display: block;
+  height: 138px;
+  margin-bottom: 10px;
+  background:
+    radial-gradient(circle at 50% 40%, rgba(10,132,255,0.16) 0 30px, transparent 31px),
+    radial-gradient(70px 46px at 18% 22%, var(--lg-map-park) 0 97%, transparent 100%),
+    radial-gradient(90px 60px at 96% 96%, var(--lg-map-water) 0 97%, transparent 100%),
+    linear-gradient(24deg, transparent 46%, var(--lg-map-road) 46% 50.5%, transparent 50.5%),
+    linear-gradient(-64deg, transparent 60%, var(--lg-map-road) 60% 63%, transparent 63%),
+    linear-gradient(90deg, transparent 74%, #F7C873 74% 76%, transparent 76%),
+    repeating-linear-gradient(116deg, transparent 0 24px, var(--lg-map-road) 24px 25.5px),
+    repeating-linear-gradient(26deg, transparent 0 30px, var(--lg-map-road) 30px 31px),
+    var(--lg-map);
+}
+.chat-view .meet-card-header {
+  position: absolute;
+  top: 26px;
+  left: 50%;
+  transform: translateX(-50%);
+  flex-direction: column;
+  gap: 4px;
+  margin: 0;
+}
+.chat-view .meet-card .meet-card-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+  background: #FF3B30;
+  box-shadow: 0 0 0 3px #fff, 0 5px 12px rgba(0,0,0,0.25);
+}
+.chat-view .meet-card-title {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0;
+  opacity: 1;
+  color: #1C1C1E;
+  white-space: nowrap;
+  text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff;
+}
+.dark .chat-view .meet-card-title {
+  color: #fff;
+  text-shadow: 0 0 3px #000, 0 0 3px #000;
+}
+.chat-view .meet-card-location,
+.chat-view .meet-card-time,
+.chat-view .meet-card-note,
+.chat-view .meet-card-footer { padding: 0 16px; }
+.chat-view .meet-card-location { font-size: 17px; font-weight: 600; }
+.chat-view .meet-card-time,
+.chat-view .meet-card-note {
+  font-size: 15px;
+  line-height: 1.35;
+  opacity: 1;
+  color: var(--lg-ink-soft);
+}
+.chat-view .meet-card-divider { display: none; }
+.chat-view .meet-card-footer {
+  margin-top: 6px;
+  justify-content: flex-start;
+  font-size: 12px;
+}
+.chat-view .meet-card-user .interaction-status { color: var(--lg-ink-soft); }
+
+/* 转账：深色现金卡，金额用大号无衬线字 */
+.chat-view .transfer-card {
+  width: 244px;
+  align-items: flex-start;
+  gap: 4px;
+  padding: 18px 18px 14px;
+  border: none;
+  border-radius: 22px;
+  color: #fff;
+  background:
+    radial-gradient(130% 100% at 0% 0%, rgba(255,255,255,0.16) 0%, transparent 55%),
+    linear-gradient(160deg, #2C2C2E 0%, #111113 100%);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.16), var(--lg-card-drop);
+}
+.chat-view .transfer-card-accent { display: none; }
+.chat-view .transfer-card-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  opacity: 0.66;
+}
+.chat-view .transfer-card .transfer-card-amount {
+  font-family: inherit;
+  font-size: 38px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #fff !important;
+}
+.chat-view .transfer-card-amount .currency { font-size: 22px; font-weight: 600; opacity: 0.8; }
+.chat-view .transfer-card-note { text-align: left; font-size: 14px; opacity: 0.72; }
+.chat-view .transfer-card-divider { background: #fff; opacity: 0.14; }
+.chat-view .transfer-card-footer { font-size: 11px; opacity: 0.66; letter-spacing: 0; }
+
+/* 连着发的几张卡片之间留一点缝 */
+.chat-view .chat-messages .music-card-wrap,
+.chat-view .meet-card,
+.chat-view .transfer-card,
+.chat-view .gift-card { margin-top: 3px; margin-bottom: 3px; }
+
+/* 礼物 / 文件 / 通话：一片轻玻璃 */
+.chat-view .gift-card,
+.chat-view .chat-file-card,
+.chat-view .call-bubble-ai,
+.chat-view .call-record-card {
+  border: none !important;
+  border-radius: 22px !important;
+  background: var(--lg-sheet) !important;
+  box-shadow: var(--lg-rim), var(--lg-card-drop) !important;
+}
+.chat-view .gift-card-image,
+.chat-view .gift-card-body { background: transparent; }
+.chat-view .call-bubble-user {
+  border: none;
+  border-radius: 22px;
+  background: #0A84FF;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35), var(--lg-card-drop);
+}
+
+/* 语音：AI 侧与气泡同一片玻璃，用户侧 iMessage 蓝 */
+.chat-view .voice-bubble { border: none; border-radius: 22px; }
+.chat-view .voice-bubble-user {
+  background: #0A84FF;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.35);
+}
+.chat-view .voice-bubble-ai {
+  background: var(--bubble-ai-bg);
+  box-shadow: inset 0 1px 0 var(--lg-bubble-hl);
+  backdrop-filter: var(--lg-bubble-blur);
+  -webkit-backdrop-filter: var(--lg-bubble-blur);
+}
+:root.keyboard-open .chat-view .voice-bubble-ai,
+:root.keyboard-open .chat-messages .chat-album-save {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 /* 移动端：非聊天页的整条玻璃面板改实底（大面积模糊最吃 GPU）；

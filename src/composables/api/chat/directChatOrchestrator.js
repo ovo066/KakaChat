@@ -100,7 +100,14 @@ export async function runDirectChatOrchestrator(context, onChunk) {
   if (suppressDecisionPromise) {
     const result = await suppressDecisionPromise
     if (result.suppress) {
-      return await applyReadOnlySuppression({ activeChat, chatStore, settingsStore, showToast, reason: result.reason })
+      return await applyReadOnlySuppression({
+        activeChat,
+        chatStore,
+        settingsStore,
+        showToast,
+        reason: result.reason,
+        recordReason: result.recordReason
+      })
     }
     if (result.error) {
       console.warn('[LivenessEngine] Decision API error, proceeding with normal reply:', result.error)

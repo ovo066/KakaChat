@@ -26,6 +26,8 @@ function parseClaudeVersion(modelId) {
 
 function isClaudeSamplingLocked(modelId) {
   if (!modelId.includes('claude')) return false
+  // 中转站常用 xxx-thinking 别名，强制开启思考，只接受 temperature=1
+  if (/thinking/i.test(modelId)) return true
   if (/claude[^\s]*[-_.]latest(?:$|[-_.:/])/i.test(modelId)) return true
 
   const version = parseClaudeVersion(modelId)

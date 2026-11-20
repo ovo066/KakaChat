@@ -234,9 +234,9 @@
                     @change="setField('quickActionConfigId', $event.target.value || null)"
                   >
                     <option value="">跟随角色</option>
-                    <option v-for="cfg in configs" :key="cfg.id" :value="cfg.id">
-                      {{ cfg.name || cfg.model || 'API ' + cfg.id.slice(-4) }}
-                    </option>
+<optgroup v-for="g in configsStore.providerGroups" :key="g.provider.id" :label="g.provider.name">
+                <option v-for="cfg in g.models" :key="cfg.id" :value="cfg.id">{{ cfg.modelLabel }}</option>
+              </optgroup>
                   </select>
                 </div>
               </div>
@@ -267,7 +267,6 @@ const readerStore = useReaderStore()
 const { scheduleSave } = useStorage()
 
 const settings = computed(() => readerStore.readerAISettings)
-const configs = computed(() => configsStore.configs || [])
 
 const summaryCount = computed(() => {
   const book = readerStore.activeBook

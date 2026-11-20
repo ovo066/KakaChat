@@ -32,7 +32,7 @@ describe('chatSideEffects', () => {
     })
 
     expect(chatStore.ui.isTyping).toBe(false)
-    expect(mocks.markPendingUserMessagesAsRead).toHaveBeenCalledWith(activeChat, 'read_only')
+    expect(mocks.markPendingUserMessagesAsRead).toHaveBeenCalledWith(activeChat, 'read_only', { readOnlyReason: '忙线中' })
     expect(showToast).toHaveBeenCalledWith('对方已读不回：忙线中')
     expect(result).toEqual({ success: true, suppressed: true })
   })

@@ -21,6 +21,19 @@ const ROOT_MEDIA_SCHEMA = {
   ]
 }
 
+const CHAT_MESSAGE_SCHEMA = {
+  fields: [
+    {
+      valueKey: 'imageUrl',
+      refKey: 'imageRef',
+      scope: 'msg',
+      ownerId: (_msg, _index, ctx) => ctx.parent?.id || ctx.parentIndex,
+      itemId: (msg, index) => msg.id || index,
+      shouldHandle: item => !!item.isImage
+    }
+  ]
+}
+
 const CONTACT_SCHEMA = {
   fields: [
     {
@@ -64,15 +77,20 @@ const CONTACT_SCHEMA = {
       key: 'msgs',
       collection: true,
       defaultToEmpty: true,
+      schema: CHAT_MESSAGE_SCHEMA
+    },
+    {
+      // 同一角色的其他（已存档）对话，结构与 msgs 相同
+      key: 'chatThreads',
+      collection: true,
+      defaultToEmpty: false,
       schema: {
-        fields: [
+        children: [
           {
-            valueKey: 'imageUrl',
-            refKey: 'imageRef',
-            scope: 'msg',
-            ownerId: (_msg, _index, ctx) => ctx.parent?.id || ctx.parentIndex,
-            itemId: (msg, index) => msg.id || index,
-            shouldHandle: item => !!item.isImage
+            key: 'msgs',
+            collection: true,
+            defaultToEmpty: true,
+            schema: CHAT_MESSAGE_SCHEMA
           }
         ]
       }
@@ -281,6 +299,15 @@ const CALL_RESOURCE_SCHEMA = {
       itemId: () => 'character-image',
       clearRefWhenValueMissing: true,
       shouldHandle: (item, rawValue) => isLikelyMediaString(rawValue) || !!item.characterImageRef
+    },
+    {
+      valueKey: 'voiceBackground',
+      refKey: 'voiceBackgroundRef',
+      scope: 'call_voice_background',
+      ownerId: (_resource, _index, ctx) => resolveContextEntityId(ctx, 'call'),
+      itemId: () => 'voice-background',
+      clearRefWhenValueMissing: true,
+      shouldHandle: (item, rawValue) => isLikelyMediaString(rawValue) || !!item.voiceBackgroundRef
     }
   ],
   listFields: [

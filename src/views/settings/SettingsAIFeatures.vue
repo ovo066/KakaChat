@@ -8,6 +8,13 @@
         </div>
         <IosToggle :model-value="store.allowAIFavorite" @update:modelValue="handleAllowAIFavoriteChange" />
       </div>
+      <div class="px-4 py-3 flex justify-between items-center border-b border-[var(--border-color)]">
+        <div class="flex flex-col">
+          <span class="text-[17px] text-[var(--text-primary)]">AI 表情回应</span>
+          <span class="text-[12px] text-[var(--text-secondary)]">AI 可以像 iMessage 一样给你的消息点 ❤️ 👍 😂 等回应</span>
+        </div>
+        <IosToggle v-model="store.allowAIReaction" @update:modelValue="scheduleSave" />
+      </div>
     <div class="px-4 py-3 flex justify-between items-center border-b border-[var(--border-color)]">
       <div class="flex flex-col">
         <span class="text-[17px] text-[var(--text-primary)]">AI发送转账</span>
@@ -84,6 +91,20 @@
         <span class="text-[12px] text-[var(--text-secondary)]">AI 可以主动发起语音或视频通话</span>
       </div>
       <IosToggle v-model="store.allowAICall" @update:modelValue="scheduleSave" />
+    </div>
+    <div class="px-4 py-3 flex justify-between items-center border-b border-[var(--border-color)]">
+      <div class="flex flex-col">
+        <span class="text-[17px] text-[var(--text-primary)]">AI撤回消息</span>
+        <span class="text-[12px] text-[var(--text-secondary)]">AI 可以撤回说漏嘴的话，点开"撤回了一条消息"能偷看原文</span>
+      </div>
+      <IosToggle v-model="store.allowAIRecall" @update:modelValue="scheduleSave" />
+    </div>
+    <div class="px-4 py-3 flex justify-between items-center border-b border-[var(--border-color)]">
+      <div class="flex flex-col">
+        <span class="text-[17px] text-[var(--text-primary)]">AI发送文件</span>
+        <span class="text-[12px] text-[var(--text-secondary)]">AI 需要时可以把清单、计划、代码等整理成文件发给你</span>
+      </div>
+      <IosToggle v-model="store.allowAIFile" @update:modelValue="scheduleSave" />
     </div>
     <div class="px-4 py-3 flex justify-between items-center">
       <div class="flex flex-col">
